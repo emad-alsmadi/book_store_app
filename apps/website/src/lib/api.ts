@@ -584,6 +584,15 @@ export const brandsApi = {
     const { data } = await api.get('/brands');
     return data;
   },
+  /**
+   * Get a single brand by ID
+   * @param id - Brand ID
+   * @returns Brand details
+   */
+  getBrandById: async (id: string): Promise<any> => {
+    const { data } = await api.get(`/brands/${id}`);
+    return data;
+  },
 };
 
 /**

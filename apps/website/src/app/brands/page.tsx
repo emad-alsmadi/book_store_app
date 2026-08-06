@@ -2,7 +2,8 @@
 
 import { useBrands } from '@/hooks/brands/brandsQuery';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Globe, MapPin, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function BrandsPage() {
   const { data: brands, isLoading, error } = useBrands();
@@ -21,69 +22,130 @@ export default function BrandsPage() {
   if (error) {
     return (
       <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center text-red-600'>
-          Failed to load brands
-        </div>
+        <div className='text-center text-red-600'>Failed to load brands</div>
       </div>
     );
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-fuchsia-50 via-purple-50 to-cyan-50'>
+    <div className='min-h-screen bg-gray-50'>
+      {/* Hero Section */}
+      <div className='bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 text-white py-16'>
+        <div className='container mx-auto px-4'>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className='max-w-3xl'
+          >
+            <h1 className='text-4xl md:text-5xl font-bold mb-4'>
+              Shop by Brand
+            </h1>
+            <p className='text-lg text-white/90'>
+              Discover premium products from world-renowned brands. Quality you
+              can trust.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
       <div className='container mx-auto px-4 py-12'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ delay: 0.1 }}
         >
-          <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-700 via-purple-700 to-cyan-700 mb-8'>
-            Our Brands
-          </h1>
+          <div className='flex items-center justify-between mb-8'>
+            <h2 className='text-2xl font-bold text-gray-900'>
+              All Brands ({brands?.length || 0})
+            </h2>
+          </div>
 
           {brands && brands.length > 0 ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {brands.map((brand: any) => (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+              {brands.map((brand: any, index: number) => (
                 <motion.div
                   key={brand._id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className='bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 p-6 shadow-lg hover:shadow-xl transition-shadow'
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className='bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden group'
                 >
-                  <div className='flex items-center gap-4 mb-4'>
-                    {brand.logo && (
-                      <img
-                        src={brand.logo}
-                        alt={brand.name}
-                        className='w-16 h-16 object-contain rounded-lg'
-                      />
-                    )}
-                    <div>
-                      <h2 className='text-xl font-bold text-gray-900'>{brand.name}</h2>
+                  <Link href={`/brands/${brand._id}`}>
+                    <div className='p-6'>
+                      {/* Brand Logo */}
+                      <div className='flex items-center justify-center mb-4 h-24 bg-gray-50 rounded-lg'>
+                        {brand.logo ? (
+                          <img
+                            src={brand.logo}
+                            alt={brand.name}
+                            className='max-h-20 max-w-full object-contain'
+                          />
+                        ) : (
+                          <div className='w-16 h-16 bg-gradient-to-br from-fuchsia-100 to-purple-100 rounded-full flex items-center justify-center'>
+                            <span className='text-2xl font-bold text-fuchsia-600'>
+                              {brand.name.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Brand Name */}
+                      <h3 className='text-lg font-semibold text-gray-900 text-center mb-2 group-hover:text-fuchsia-600 transition-colors'>
+                        {brand.name}
+                      </h3>
+
+                      {/* Country */}
                       {brand.country && (
-                        <p className='text-sm text-gray-600'>{brand.country}</p>
+                        <div className='flex items-center justify-center gap-1 text-sm text-gray-500 mb-3'>
+                          <MapPin className='h-4 w-4' />
+                          <span>{brand.country}</span>
+                        </div>
                       )}
+
+                      {/* Description */}
+                      {brand.description && (
+                        <p className='text-sm text-gray-600 text-center line-clamp-2 mb-4'>
+                          {brand.description}
+                        </p>
+                      )}
+
+                      {/* View Products Button */}
+                      <div className='flex items-center justify-center gap-2 text-fuchsia-600 font-medium text-sm group-hover:gap-3 transition-all'>
+                        <span>View Products</span>
+                        <ArrowRight className='h-4 w-4' />
+                      </div>
                     </div>
-                  </div>
-                  {brand.description && (
-                    <p className='text-gray-700 text-sm mb-4'>{brand.description}</p>
-                  )}
+                  </Link>
+
+                  {/* Website Link */}
                   {brand.website && (
-                    <a
-                      href={brand.website}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='inline-block text-sm font-semibold text-fuchsia-700 hover:text-fuchsia-800 transition-colors'
-                    >
-                      Visit Website →
-                    </a>
+                    <div className='px-6 pb-6 pt-0'>
+                      <a
+                        href={brand.website}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        onClick={(e) => e.stopPropagation()}
+                        className='flex items-center justify-center gap-2 text-xs text-gray-500 hover:text-fuchsia-600 transition-colors'
+                      >
+                        <Globe className='h-3 w-3' />
+                        Visit Official Website
+                      </a>
+                    </div>
                   )}
                 </motion.div>
               ))}
             </div>
           ) : (
-            <div className='text-center py-12'>
-              <p className='text-gray-600'>No brands available yet.</p>
+            <div className='text-center py-16 bg-white rounded-xl border border-gray-100'>
+              <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                <Globe className='h-8 w-8 text-gray-400' />
+              </div>
+              <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                No Brands Available
+              </h3>
+              <p className='text-gray-600'>
+                Check back later as we add new brands to our collection.
+              </p>
             </div>
           )}
         </motion.div>

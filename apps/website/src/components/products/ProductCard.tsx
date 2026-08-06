@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Heart, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/lib/cartStore';
@@ -21,7 +21,9 @@ interface ProductCardProps {
     brand?: {
       name: string;
       slug: string;
+      _id?: string;
     };
+    stock?: number;
   };
 }
 
@@ -45,12 +47,14 @@ export function ProductCard({ product }: ProductCardProps) {
         )
       : 0;
 
+  const inStock = product.stock !== undefined ? product.stock > 0 : true;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
-      className='bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group w-full'
+      className='bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group w-full border border-gray-100'
     >
       <Link href={`/products/${product._id}`}>
         <div className='relative aspect-square overflow-hidden bg-gray-100'>
@@ -58,37 +62,65 @@ export function ProductCard({ product }: ProductCardProps) {
             src={product.cover}
             alt={product.title}
             className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
+            loading='lazy'
           />
           {discount > 0 && (
-            <div className='absolute top-2 left-2 bg-linear-to-r from-fuchsia-600 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full'>
+            <div className='absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
               -{discount}%
             </div>
           )}
+          {!inStock && (
+            <div className='absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
+              Out of Stock
+            </div>
+          )}
+
+          <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2'>
+            <Button
+              size='sm'
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddToCart();
+              }}
+              disabled={!inStock}
+              className='bg-white text-gray-900 hover:bg-gray-100 shadow-lg'
+            >
+              <ShoppingCart className='h-4 w-4 mr-1' />
+              Add to Cart
+            </Button>
+            <Button
+              size='sm'
+              variant='outline'
+              className='bg-white/90 hover:bg-white shadow-lg'
+            >
+              <Eye className='h-4 w-4' />
+            </Button>
+          </div>
         </div>
       </Link>
 
-      <div className='p-3'>
+      <div className='p-4'>
         {product.brand && (
           <Link
-            href={`/brands/${product.brand.slug}`}
-            className='text-xs text-gray-500 hover:text-fuchsia-600 transition-colors mb-1 block'
+            href={`/brands/${product.brand._id || product.brand.slug}`}
+            className='text-xs text-gray-500 hover:text-fuchsia-600 transition-colors mb-1 block font-medium'
           >
             {product.brand.name}
           </Link>
         )}
 
         <Link href={`/products/${product._id}`}>
-          <h3 className='font-semibold text-gray-900 mb-1 line-clamp-2 hover:text-fuchsia-600 transition-colors'>
+          <h3 className='font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-fuchsia-600 transition-colors text-sm leading-relaxed'>
             {product.title}
           </h3>
         </Link>
 
-        <div className='flex items-center gap-1 mb-2'>
+        <div className='flex items-center gap-2 mb-3'>
           <div className='flex items-center'>
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`h-3 w-3 ${
+                className={`h-3.5 w-3.5 ${
                   i < Math.floor(product.averageRating)
                     ? 'fill-yellow-400 text-yellow-400'
                     : 'text-gray-300'
@@ -96,12 +128,14 @@ export function ProductCard({ product }: ProductCardProps) {
               />
             ))}
           </div>
-          <span className='text-xs text-gray-500'>({product.reviewCount})</span>
+          <span className='text-xs text-gray-500'>
+            ({product.reviewCount || 0})
+          </span>
         </div>
 
-        <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center gap-2'>
-            <span className='text-lg font-bold text-gray-900'>
+            <span className='text-xl font-bold text-gray-900'>
               ${product.price.toFixed(2)}
             </span>
             {discount > 0 && (
@@ -110,14 +144,24 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
+        </div>
 
+        <div className='flex items-center gap-2'>
           <Button
             size='sm'
             onClick={handleAddToCart}
-            className='gap-1'
+            disabled={!inStock}
+            className='flex-1 gap-1'
           >
             <ShoppingCart className='h-4 w-4' />
             Add
+          </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            className='px-3'
+          >
+            <Heart className='h-4 w-4' />
           </Button>
         </div>
       </div>

@@ -189,6 +189,7 @@ export interface Product {
   price: number;
   basePrice: number;
   cover: string;
+  images?: string[];
   category: string;
   subcategory?: string;
   material?: string;
@@ -199,14 +200,7 @@ export interface Product {
     height?: number;
   };
   weight?: number;
-  shippingInfo?: {
-    weight?: number;
-    dimensions?: {
-      length?: number;
-      width?: number;
-      height?: number;
-    };
-  };
+  shippingInfo?: string;
   stock: number;
   sku?: string;
   averageRating: number;

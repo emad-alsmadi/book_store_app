@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -11,6 +11,14 @@ import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { Pagination } from '@/components/ui/Pagination';
 import { useSearchParams } from 'next/navigation';
 
+const sortOptions = [
+  { value: 'createdAt', label: 'Featured' },
+  { value: 'price', label: 'Price: Low to High' },
+  { value: '-price', label: 'Price: High to Low' },
+  { value: '-averageRating', label: 'Avg. Customer Review' },
+  { value: '-createdAt', label: 'Newest Arrivals' },
+];
+
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const category = searchParams.get('category') || undefined;
@@ -18,12 +26,13 @@ export default function ProductsPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 6;
+  const [sortBy, setSortBy] = useState('createdAt');
+  const limit = 12;
 
-  // Reset page when category changes
+  // Reset page when category or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [category, subcategory]);
+  }, [category, subcategory, sortBy]);
 
   const {
     data: response,
@@ -32,7 +41,7 @@ export default function ProductsPage() {
   } = useProducts({
     page: currentPage,
     limit,
-    sort: 'createdAt',
+    sort: sortBy,
     category,
     subcategory,
   });
@@ -86,7 +95,7 @@ export default function ProductsPage() {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className='mb-8'
+              className='mb-6'
             >
               <h1 className='text-3xl font-extrabold text-gray-900 mb-2'>
                 Products
@@ -96,14 +105,14 @@ export default function ProductsPage() {
               </p>
             </motion.div>
 
-            {/* Search and Filter */}
+            {/* Search, Filter and Sort */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className='mb-8 flex gap-4'
+              className='mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between'
             >
-              <div className='relative flex-1 max-w-xl'>
+              <div className='relative flex-1 max-w-xl w-full'>
                 <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5' />
                 <Input
                   type='text'
@@ -113,13 +122,41 @@ export default function ProductsPage() {
                   className='pl-10'
                 />
               </div>
-              <Button
-                variant='outline'
-                className='gap-2'
-              >
-                <Filter className='h-4 w-4' />
-                Filters
-              </Button>
+
+              <div className='flex gap-3 w-full sm:w-auto'>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className='px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent flex items-center gap-2'
+                >
+                  {sortOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <Button
+                  variant='outline'
+                  className='gap-2 lg:hidden'
+                >
+                  <Filter className='h-4 w-4' />
+                  Filters
+                </Button>
+              </div>
+            </motion.div>
+
+            {/* Results Count */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className='mb-6 text-sm text-gray-600'
+            >
+              Showing {filteredProducts.length} of {meta.total} results
             </motion.div>
 
             {/* Products Grid */}
@@ -129,7 +166,7 @@ export default function ProductsPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className='grid grid-cols-3 gap-4'
+                  className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                 >
                   {filteredProducts.map((product: any) => (
                     <ProductCard
@@ -160,7 +197,7 @@ export default function ProductsPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className='text-center py-12'
+                className='text-center py-12 bg-white rounded-xl border border-gray-100'
               >
                 <p className='text-gray-500 text-lg'>
                   {searchQuery
