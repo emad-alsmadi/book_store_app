@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Craftify',
-  description: 'Craftify — a modern digital templates marketplace',
+  title: 'TrendVaulta',
+  description:
+    'Discover premium beauty products, fashion items, and accessories from world-renowned brands. Shop with confidence at TrendVaulta.',
 };
 
 export default function RootLayout({
