@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { ShoppingCart, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/lib/cartStore';
-import { useProducts } from '@/hooks/products/productsQuery';
+import {
+  useProductBundles,
+  useProducts,
+} from '@/hooks/products/productsQuery';
 import {
   getDemoBundlePricing,
   pickBundleCompanions,
@@ -25,21 +28,35 @@ type Props = {
 };
 
 /**
- * DEMO frequently-bought-together module (PDP).
- * Companion picks use catalog affinity stub; savings are display-only.
- * TODO(api): GET /api/products/:id/bundles
+ * Frequently-bought-together module (PDP).
+ * Prefers GET /api/products/:id/bundles; falls back to demo companion picks.
+ * Cart add uses real product prices; API savings are display-only.
  */
 export function FrequentlyBoughtTogether({ primary }: Props) {
   const cart = useCart();
-  const { data, isLoading, error } = useProducts({
-    page: 1,
-    limit: 16,
-    sort: 'createdAt',
-    ...(primary.category ? { category: primary.category } : {}),
-  });
+  const bundlesQuery = useProductBundles(primary._id);
+  const apiItems = (bundlesQuery.data?.items ?? []) as BundleProduct[];
+  const useApi = bundlesQuery.isSuccess && apiItems.length > 0;
+  const useFallback =
+    bundlesQuery.isFetched &&
+    (!bundlesQuery.isSuccess || apiItems.length === 0);
+
+  const {
+    data,
+    isLoading: catalogLoading,
+    error: catalogError,
+  } = useProducts(
+    {
+      page: 1,
+      limit: 16,
+      sort: 'createdAt',
+      ...(primary.category ? { category: primary.category } : {}),
+    },
+    { enabled: useFallback },
+  );
   const catalog = (data?.data ?? []) as BundleProduct[];
 
-  const companions = useMemo(
+  const demoCompanions = useMemo(
     () =>
       pickBundleCompanions(catalog, {
         primaryId: primary._id,
@@ -48,6 +65,8 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
       }),
     [catalog, primary._id, primary.category],
   );
+
+  const companions = useApi ? apiItems : demoCompanions;
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
@@ -65,7 +84,45 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
   );
 
   const selectedItems = allItems.filter((p) => effectiveSelected[p._id]);
-  const pricing = getDemoBundlePricing(selectedItems.map((p) => p.price));
+
+  const pricing = useMemo(() => {
+    const prices = selectedItems.map((p) => p.price);
+    const demo = getDemoBundlePricing(prices);
+    const fullApiSelection =
+      useApi &&
+      selectedItems.length === allItems.length &&
+      selectedItems.length > 1;
+    const apiSavings = bundlesQuery.data?.savings;
+    const apiBundlePrice = bundlesQuery.data?.bundlePrice;
+
+    if (
+      fullApiSelection &&
+      typeof apiSavings === 'number' &&
+      typeof apiBundlePrice === 'number'
+    ) {
+      return {
+        subtotal: demo.subtotal,
+        bundleTotal: apiBundlePrice,
+        savings: apiSavings,
+      };
+    }
+
+    if (useApi) {
+      return {
+        subtotal: demo.subtotal,
+        bundleTotal: demo.subtotal,
+        savings: 0,
+      };
+    }
+
+    return demo;
+  }, [
+    allItems.length,
+    bundlesQuery.data?.bundlePrice,
+    bundlesQuery.data?.savings,
+    selectedItems,
+    useApi,
+  ]);
 
   const toggle = (id: string) => {
     // Primary stays selected — FBT always includes the viewed product
@@ -94,6 +151,9 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
     });
   };
 
+  const isLoading =
+    bundlesQuery.isLoading || (useFallback && catalogLoading);
+
   if (isLoading) {
     return (
       <section
@@ -111,7 +171,8 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
     );
   }
 
-  if (error || companions.length === 0) return null;
+  if (useFallback && (catalogError || companions.length === 0)) return null;
+  if (!useFallback && companions.length === 0) return null;
 
   return (
     <section
@@ -121,7 +182,9 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
       <div className='mb-5 flex flex-wrap items-start justify-between gap-3'>
         <div>
           <p className='text-xs font-medium uppercase tracking-wider text-stone-500'>
-            Demo · frequently bought together
+            {useApi
+              ? 'Frequently bought together'
+              : 'Demo · frequently bought together'}
           </p>
           <h2
             id='fbt-heading'
@@ -130,13 +193,14 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
             Buy it with
           </h2>
           <p className='mt-1 text-sm text-stone-600'>
-            Companion picks from the catalog. Bundle savings are demo-only —
-            checkout still uses real product prices.
+            {useApi
+              ? 'Suggested companions for this product. Bundle savings are display-only — checkout still uses real product prices.'
+              : 'Companion picks from the catalog. Bundle savings are demo-only — checkout still uses real product prices.'}
           </p>
         </div>
         {pricing.savings > 0 && selectedItems.length > 1 && (
           <span className='rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900'>
-            Demo save ${pricing.savings.toFixed(2)}
+            {useApi ? 'Save' : 'Demo save'} ${pricing.savings.toFixed(2)}
           </span>
         )}
       </div>
@@ -231,17 +295,20 @@ export function FrequentlyBoughtTogether({ primary }: Props) {
       <div className='mt-6 flex flex-col gap-3 border-t border-stone-100 pt-5 sm:flex-row sm:items-center sm:justify-between'>
         <div className='text-sm text-stone-600'>
           {selectedItems.length <= 1 ? (
-            <span>Select a companion to build a demo bundle</span>
+            <span>Select a companion to build a bundle</span>
           ) : (
             <>
-              <span className='text-stone-500 line-through mr-2'>
-                ${pricing.subtotal.toFixed(2)}
-              </span>
+              {pricing.savings > 0 && (
+                <span className='text-stone-500 line-through mr-2'>
+                  ${pricing.subtotal.toFixed(2)}
+                </span>
+              )}
               <span className='font-semibold text-stone-900'>
                 ${pricing.bundleTotal.toFixed(2)}
               </span>
               <span className='ml-1 text-xs text-stone-500'>
-                for {selectedItems.length} items (demo total)
+                for {selectedItems.length} items
+                {useApi ? ' (display total)' : ' (demo total)'}
               </span>
             </>
           )}

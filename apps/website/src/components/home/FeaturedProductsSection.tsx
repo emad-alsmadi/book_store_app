@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ProductCard } from '@/components/products/ProductCard';
-import { getDemoBadgesForIndex } from '@/data/demoStorefront';
+import type { ProductCardBadge } from '@/components/products/ProductCard';
 import type { Product } from '@/types';
 
 type Props = {
@@ -11,10 +11,16 @@ type Props = {
   error?: string | null;
 };
 
+function badgesFromProduct(product: Product): ProductCardBadge[] {
+  if (!product.badges?.length) return [];
+  return product.badges.filter(
+    (b): b is ProductCardBadge =>
+      b === 'bestseller' || b === 'new' || b === 'lowStock',
+  );
+}
+
 /**
- * Featured / best-sellers rail.
- * Uses live product list when available; badges are DEMO until API provides them.
- * TODO(api): GET /api/products?sort=bestselling or /api/storefront/featured
+ * Featured / best-sellers rail — GET /api/products?sort=bestselling&limit=8
  */
 export function FeaturedProductsSection({
   products,
@@ -39,7 +45,7 @@ export function FeaturedProductsSection({
               Featured picks
             </h2>
             <p className='mt-1 text-sm text-stone-600'>
-              From the catalog — badge labels are demo flags for now.
+              Top sellers from the catalog
             </p>
           </div>
           <Link
@@ -77,11 +83,11 @@ export function FeaturedProductsSection({
 
         {!loading && !error && products.length > 0 && (
           <div className='grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4'>
-            {products.map((product, index) => (
+            {products.map((product) => (
               <ProductCard
                 key={product._id}
                 product={product}
-                badges={getDemoBadgesForIndex(index)}
+                badges={badgesFromProduct(product)}
               />
             ))}
           </div>

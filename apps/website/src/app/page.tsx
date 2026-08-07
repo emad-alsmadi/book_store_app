@@ -21,16 +21,15 @@ export default function HomePage() {
   const router = useRouter();
   const [query] = useState<ProductsQuery>({
     page: 1,
-    limit: 16,
-    // TODO(api): switch to sort=bestselling when backend supports it
-    sort: 'createdAt',
+    limit: 8,
+    sort: 'bestselling',
   });
   const [searchQuery, setSearchQuery] = useState('');
 
   const stableQuery = useMemo(() => query, [query]);
   const productsQuery = useProducts(stableQuery);
   const products = productsQuery.data?.data ?? [];
-  const featuredProducts = products.slice(0, 8);
+  const featuredProducts = products;
   const loading = productsQuery.isLoading;
   const error =
     (productsQuery.error as { message?: string } | null)?.message || null;

@@ -9,11 +9,41 @@ export function brandByIdKey(id: string) {
   return ['brands', 'byId', id] as const;
 }
 
+export function featuredBrandsKey(limit = 8) {
+  return ['brands', 'featured', { limit }] as const;
+}
+
+/** Normalize list payloads: array or `{ data: Brand[] }`. */
+function normalizeBrandsList(payload: unknown): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    Array.isArray((payload as { data?: unknown }).data)
+  ) {
+    return (payload as { data: any[] }).data;
+  }
+  return [];
+}
+
 export function useBrands() {
   return useQuery({
     queryKey: brandsKey(),
     queryFn: async () => {
       return await brandsApi.getBrands();
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+/** Featured brands for homepage strip — GET /api/brands?featured=true&limit=8 */
+export function useFeaturedBrands(limit = 8) {
+  return useQuery({
+    queryKey: featuredBrandsKey(limit),
+    queryFn: async () => {
+      const res = await brandsApi.getBrands({ featured: true, limit });
+      return normalizeBrandsList(res);
     },
     staleTime: 60_000,
     retry: 1,

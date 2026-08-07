@@ -2,6 +2,7 @@ export const endpoints = {
   products: {
     list: '/products',
     details: (id: string) => `/products/${id}`,
+    bundles: (id: string) => `/products/${id}/bundles`,
   },
   brands: {
     list: '/brands',
@@ -66,5 +67,15 @@ export const endpoints = {
     validate: '/coupons/validate',
     /** Admin/ops only; paid webhook increments usage for customers */
     incrementUsage: (id: string) => `/coupons/${id}/use`,
+  },
+  recentlyViewed: {
+    list: '/me/recently-viewed',
+    track: '/me/recently-viewed',
+  },
+  offers: {
+    list: '/offers',
+  },
+  recommendations: {
+    list: '/recommendations',
   },
 } as const;

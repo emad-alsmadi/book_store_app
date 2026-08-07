@@ -2,13 +2,55 @@
 
 import Link from 'next/link';
 import { DEMO_FEATURED_BRANDS, type DemoBrand } from '@/data/demoStorefront';
+import { useFeaturedBrands } from '@/hooks/brands/brandsQuery';
 
 type Props = {
+  /** Optional override (tests / storybook). When omitted, fetches featured brands. */
   brands?: DemoBrand[];
 };
 
-/** DEMO module — TODO(api): GET /api/brands?featured=true */
-export function FeaturedBrandsStrip({ brands = DEMO_FEATURED_BRANDS }: Props) {
+const ACCENTS = [
+  'from-rose-500 to-amber-400',
+  'from-slate-700 to-stone-500',
+  'from-teal-600 to-cyan-500',
+  'from-zinc-800 to-neutral-600',
+  'from-fuchsia-600 to-violet-500',
+  'from-amber-600 to-orange-400',
+  'from-emerald-600 to-teal-400',
+  'from-sky-600 to-indigo-500',
+] as const;
+
+function mapApiBrandToStripItem(brand: any, index: number): DemoBrand {
+  const id = String(brand?._id ?? brand?.id ?? index);
+  const slugOrId = brand?.slug || brand?._id || id;
+  const description =
+    typeof brand?.description === 'string' ? brand.description.trim() : '';
+  const tagline =
+    description ||
+    (brand?.country ? `From ${brand.country}` : 'Shop the collection');
+
+  return {
+    id,
+    name: brand?.name || 'Brand',
+    tagline,
+    href: `/brands/${slugOrId}`,
+    accent: ACCENTS[index % ACCENTS.length],
+  };
+}
+
+/** Featured houses — GET /api/brands?featured=true&limit=8; demo fallback if empty/error */
+export function FeaturedBrandsStrip({ brands: brandsProp }: Props) {
+  const { data, isError } = useFeaturedBrands(8);
+
+  const fromApi =
+    !brandsProp && !isError && Array.isArray(data) && data.length > 0
+      ? data.map(mapApiBrandToStripItem)
+      : [];
+
+  const brands =
+    brandsProp ?? (fromApi.length > 0 ? fromApi : DEMO_FEATURED_BRANDS);
+  const usingDemo = !brandsProp && fromApi.length === 0;
+
   return (
     <section
       aria-labelledby='brands-heading'
@@ -17,7 +59,7 @@ export function FeaturedBrandsStrip({ brands = DEMO_FEATURED_BRANDS }: Props) {
       <div className='mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8'>
         <div className='mb-6'>
           <p className='text-xs font-medium uppercase tracking-wider text-stone-500'>
-            Demo brands
+            {usingDemo ? 'Demo brands' : 'Featured brands'}
           </p>
           <h2
             id='brands-heading'
@@ -26,7 +68,9 @@ export function FeaturedBrandsStrip({ brands = DEMO_FEATURED_BRANDS }: Props) {
             Featured houses
           </h2>
           <p className='mt-1 text-sm text-stone-600'>
-            Placeholder brand spotlights until featured brands ship from API.
+            {usingDemo
+              ? 'Placeholder brand spotlights until featured brands ship from API.'
+              : 'Handpicked houses from the catalog.'}
           </p>
         </div>
 

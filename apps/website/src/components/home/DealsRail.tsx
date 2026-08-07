@@ -3,13 +3,20 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { DEMO_DEALS, type DemoDeal } from '@/data/demoStorefront';
+import { useActiveOffers } from '@/hooks/storefront/offersQuery';
 
 type Props = {
   deals?: DemoDeal[];
 };
 
-/** DEMO module — TODO(api): GET /api/offers */
-export function DealsRail({ deals = DEMO_DEALS }: Props) {
+/** Home deals rail — live GET /api/offers with demo fallback */
+export function DealsRail({ deals: dealsProp }: Props) {
+  const { data, isLoading, isError } = useActiveOffers(12);
+
+  const liveDeals = data && data.length > 0 ? data : null;
+  const deals = dealsProp ?? liveDeals ?? (!isLoading ? DEMO_DEALS : null);
+  const usingFallback = !dealsProp && !liveDeals && !isLoading;
+
   return (
     <section
       aria-labelledby='deals-heading'
@@ -19,7 +26,7 @@ export function DealsRail({ deals = DEMO_DEALS }: Props) {
         <div className='mb-6 flex items-end justify-between gap-4'>
           <div>
             <p className='text-xs font-medium uppercase tracking-wider text-rose-600'>
-              Demo offers
+              Limited offers
             </p>
             <h2
               id='deals-heading'
@@ -28,7 +35,9 @@ export function DealsRail({ deals = DEMO_DEALS }: Props) {
               Limited-time edits
             </h2>
             <p className='mt-1 text-sm text-stone-600'>
-              Curated promotions — replace with live offers API later.
+              {isError || usingFallback
+                ? 'Curated promotions while we refresh live deals.'
+                : 'Curated promotions — grab them before they end.'}
             </p>
           </div>
           <Link
@@ -39,41 +48,53 @@ export function DealsRail({ deals = DEMO_DEALS }: Props) {
           </Link>
         </div>
 
-        <div className='-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4'>
-          {deals.map((deal, index) => (
-            <motion.div
-              key={deal.id}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.35, delay: index * 0.05 }}
-              className='min-w-[78%] snap-start sm:min-w-0'
-            >
-              <Link
-                href={deal.href}
-                className='group block overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500'
+        {isLoading && !deals ? (
+          <p className='text-sm text-stone-500' role='status'>
+            Loading offers…
+          </p>
+        ) : deals ? (
+          <div className='-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4'>
+            {deals.map((deal, index) => (
+              <motion.div
+                key={deal.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35, delay: index * 0.05 }}
+                className='min-w-[78%] snap-start sm:min-w-0'
               >
-                <div className='relative aspect-[4/3] overflow-hidden'>
-                  <img
-                    src={deal.imageUrl}
-                    alt=''
-                    className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
-                    loading='lazy'
-                  />
-                  <span className='absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-900 shadow-sm'>
-                    {deal.badge}
-                  </span>
-                </div>
-                <div className='p-4'>
-                  <h3 className='font-semibold text-stone-900 group-hover:text-fuchsia-700'>
-                    {deal.title}
-                  </h3>
-                  <p className='mt-1 text-sm text-stone-600'>{deal.subtitle}</p>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                <Link
+                  href={deal.href}
+                  className='group block overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500'
+                >
+                  <div className='relative aspect-[4/3] overflow-hidden'>
+                    <img
+                      src={deal.imageUrl}
+                      alt=''
+                      className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+                      loading='lazy'
+                    />
+                    {deal.badge ? (
+                      <span className='absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-900 shadow-sm'>
+                        {deal.badge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className='p-4'>
+                    <h3 className='font-semibold text-stone-900 group-hover:text-fuchsia-700'>
+                      {deal.title}
+                    </h3>
+                    {deal.subtitle ? (
+                      <p className='mt-1 text-sm text-stone-600'>
+                        {deal.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

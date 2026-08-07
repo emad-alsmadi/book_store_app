@@ -1,19 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  getRecentlyViewed,
-  type RecentlyViewedItem,
-} from '@/lib/recentlyViewed';
+import { useRecentlyViewed } from '@/hooks/recentlyViewed/recentlyViewedQuery';
 
-/** DEMO — localStorage only. TODO(api): GET /api/me/recently-viewed */
+/** Auth: GET /api/me/recently-viewed. Anonymous: localStorage. */
 export function RecentlyViewedSection() {
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
-
-  useEffect(() => {
-    setItems(getRecentlyViewed());
-  }, []);
+  const { items, source } = useRecentlyViewed();
 
   if (items.length === 0) return null;
 
@@ -26,7 +18,7 @@ export function RecentlyViewedSection() {
         <div className='mb-5 flex items-end justify-between gap-4'>
           <div>
             <p className='text-xs font-medium uppercase tracking-wider text-stone-500'>
-              Demo · device only
+              {source === 'api' ? 'Synced to your account' : 'On this device'}
             </p>
             <h2
               id='recent-heading'

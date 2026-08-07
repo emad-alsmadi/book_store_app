@@ -4,23 +4,28 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ProductCard } from '@/components/products/ProductCard';
 import { pickInspiredProducts } from '@/data/demoStorefront';
+import { useHomeRecommendations } from '@/hooks/storefront/recommendationsQuery';
 import { getRecentlyViewed } from '@/lib/recentlyViewed';
 import type { Product } from '@/types';
 
 type Props = {
-  products: Product[];
+  /** Optional catalog for demo fallback when recommendations API fails */
+  products?: Product[];
+  /** Parent catalog loading (used only for fallback path) */
   loading?: boolean;
 };
 
 /**
- * DEMO “inspired by browsing” rail.
- * Uses local recently-viewed + a client stub — not a real recommender.
- * TODO(api): GET /api/recommendations?context=home
+ * Inspired-by-browsing rail.
+ * Prefers GET /api/recommendations?context=home&limit=8;
+ * falls back to local pickInspiredProducts(products) on failure/empty.
  */
 export function InspiredByBrowsingSection({
-  products,
-  loading = false,
+  products = [],
+  loading: parentLoading = false,
 }: Props) {
+  const { data, isLoading: recLoading } = useHomeRecommendations(8);
+
   const [viewedIds, setViewedIds] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
@@ -32,25 +37,38 @@ export function InspiredByBrowsingSection({
     );
   }, []);
 
-  const inspired = useMemo(
-    () =>
-      pickInspiredProducts(products, {
-        excludeIds: viewedIds,
-        preferredCategories,
-        limit: 8,
-      }),
-    [products, viewedIds, preferredCategories],
-  );
+  const apiResults = data?.results;
+  const fromApi = Array.isArray(apiResults) && apiResults.length > 0;
+
+  const inspired = useMemo(() => {
+    if (fromApi && apiResults) {
+      return apiResults.slice(0, 8);
+    }
+    return pickInspiredProducts(products, {
+      excludeIds: viewedIds,
+      preferredCategories,
+      limit: 8,
+    });
+  }, [fromApi, apiResults, products, viewedIds, preferredCategories]);
 
   const hasBrowsingSignal = viewedIds.length > 0;
   const title = hasBrowsingSignal
     ? 'Inspired by your browsing'
     : 'You may also like';
-  const subtitle = hasBrowsingSignal
-    ? 'Demo picks based on items you opened on this device.'
-    : 'Demo suggestions until you browse a few products.';
+  const subtitle = fromApi
+    ? hasBrowsingSignal
+      ? 'Picks based on what is popular and items you have opened.'
+      : 'Suggestions from our catalog for you.'
+    : hasBrowsingSignal
+      ? 'Demo picks based on items you opened on this device.'
+      : 'Demo suggestions until you browse a few products.';
 
-  if (loading) {
+  const awaitingFallbackCatalog =
+    !fromApi && parentLoading && products.length === 0;
+  const showLoading =
+    (recLoading && !fromApi) || awaitingFallbackCatalog;
+
+  if (showLoading) {
     return (
       <section
         aria-labelledby='inspired-heading'
@@ -76,7 +94,7 @@ export function InspiredByBrowsingSection({
         <div className='mb-6 flex items-end justify-between gap-4'>
           <div>
             <p className='text-xs font-medium uppercase tracking-wider text-stone-500'>
-              Demo recommendations
+              {fromApi ? 'Recommended for you' : 'Demo recommendations'}
             </p>
             <h2
               id='inspired-heading'

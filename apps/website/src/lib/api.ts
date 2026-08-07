@@ -1,6 +1,7 @@
 import axios from 'axios';
 import {
   ProductsQuery,
+  Product,
   Order,
   AdminUser,
   UserUpdatePayload,
@@ -116,6 +117,23 @@ export const productsApi = {
    */
   getProductById: async (id: string): Promise<any> => {
     const { data } = await api.get(`/products/${id}`);
+    return data;
+  },
+  /**
+   * Frequently-bought-together companions for a product
+   * @param id - Product ID
+   * @returns Bundle companions plus optional display-only pricing
+   */
+  getProductBundles: async (
+    id: string,
+  ): Promise<{
+    message: string;
+    primaryProductId: string;
+    items: Product[];
+    bundlePrice?: number;
+    savings?: number;
+  }> => {
+    const { data } = await api.get(endpoints.products.bundles(id));
     return data;
   },
 };
@@ -625,11 +643,27 @@ export const reviewsApi = {
  */
 export const brandsApi = {
   /**
-   * Get all brands
-   * @returns Array of brands
+   * Get brands (optional filters: featured, limit, page, q, country)
+   * API returns `{ data, meta }`; callers should normalize as needed.
    */
-  getBrands: async (): Promise<any[]> => {
-    const { data } = await api.get('/brands');
+  getBrands: async (params?: {
+    featured?: boolean;
+    limit?: number;
+    page?: number;
+    q?: string;
+    country?: string;
+  }): Promise<any> => {
+    const query: Record<string, string | number> = {};
+    if (params?.limit != null) query.limit = params.limit;
+    if (params?.page != null) query.page = params.page;
+    if (params?.q) query.q = params.q;
+    if (params?.country) query.country = params.country;
+    if (params?.featured === true) query.featured = 'true';
+    if (params?.featured === false) query.featured = 'false';
+
+    const { data } = await api.get('/brands', {
+      params: Object.keys(query).length ? query : undefined,
+    });
     return data;
   },
   /**
@@ -683,6 +717,109 @@ export const couponsApi = {
    */
   incrementUsage: async (couponId: string): Promise<Coupon> => {
     const { data } = await api.post(`/coupons/${couponId}/use`);
+    return data;
+  },
+};
+
+/**
+ * Recently viewed API — authenticated user history (max 12, newest first).
+ */
+export const recentlyViewedApi = {
+  /**
+   * GET /api/me/recently-viewed
+   * @returns Product results for the current user
+   */
+  getRecentlyViewed: async (): Promise<Product[]> => {
+    const { data } = await api.get<{ results?: Product[] }>(
+      endpoints.recentlyViewed.list,
+    );
+    return Array.isArray(data?.results) ? data.results : [];
+  },
+  /**
+   * POST /api/me/recently-viewed { productId }
+   * @param productId - Product ID that was viewed
+   * @returns Updated Product results
+   */
+  trackRecentlyViewed: async (productId: string): Promise<Product[]> => {
+    const { data } = await api.post<{ results?: Product[] }>(
+      endpoints.recentlyViewed.track,
+      { productId },
+    );
+    return Array.isArray(data?.results) ? data.results : [];
+  },
+};
+
+export type StorefrontOffer = {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  href: string;
+  imageUrl: string;
+  endsAt?: string | null;
+};
+
+export type OffersResponse = {
+  message: string;
+  results: StorefrontOffer[];
+};
+
+/**
+ * Offers API — storefront merchandising deals rail
+ */
+export const offersApi = {
+  /**
+   * List offers (public)
+   * @param params - active filter and limit
+   * @returns Offers list envelope
+   */
+  getOffers: async (
+    params: { active?: boolean; limit?: number } = {},
+  ): Promise<OffersResponse> => {
+    const { data } = await api.get(endpoints.offers.list, {
+      params: {
+        ...(params.active != null ? { active: String(params.active) } : {}),
+        ...(params.limit != null ? { limit: params.limit } : {}),
+      },
+    });
+    return data;
+  },
+};
+
+export type RecommendationsQuery = {
+  context?: string;
+  limit?: number;
+  category?: string;
+};
+
+export type RecommendationsResponse = {
+  message: string;
+  results: Product[];
+  strategy: string;
+};
+
+/**
+ * Recommendations API — storefront inspired / similar rails
+ */
+export const recommendationsApi = {
+  /**
+   * GET /api/recommendations
+   * @param params - context, limit, optional category
+   * @returns Envelope with results + strategy
+   */
+  getRecommendations: async (
+    params: RecommendationsQuery = {},
+  ): Promise<RecommendationsResponse> => {
+    const { data } = await api.get<RecommendationsResponse>(
+      endpoints.recommendations.list,
+      {
+        params: {
+          ...(params.context != null ? { context: params.context } : {}),
+          ...(params.limit != null ? { limit: params.limit } : {}),
+          ...(params.category != null ? { category: params.category } : {}),
+        },
+      },
+    );
     return data;
   },
 };

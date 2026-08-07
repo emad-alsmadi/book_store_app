@@ -211,6 +211,8 @@ export interface Product {
   averageRating: number;
   reviewCount: number;
   featured?: boolean;
+  /** Merchandising flags from list/detail API (bestseller | new | lowStock) */
+  badges?: Array<'bestseller' | 'new' | 'lowStock'>;
   createdAt: string;
   updatedAt: string;
 }

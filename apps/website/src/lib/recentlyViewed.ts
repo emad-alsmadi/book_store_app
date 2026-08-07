@@ -1,7 +1,11 @@
 /**
- * DEMO — anonymous recently viewed (localStorage).
- * TODO(api): POST/GET /api/me/recently-viewed when authenticated
+ * Recently viewed — localStorage for anonymous users;
+ * authenticated users also sync via POST/GET /api/me/recently-viewed.
  */
+
+import type { Product } from '@/types';
+import { getAuthToken } from '@/lib/authCookies';
+import { recentlyViewedApi } from '@/lib/api';
 
 export type RecentlyViewedItem = {
   id: string;
@@ -19,6 +23,20 @@ function canUseStorage() {
   return typeof window !== 'undefined' && !!window.localStorage;
 }
 
+export function productToRecentlyViewedItem(
+  product: Product,
+  viewedAt = Date.now(),
+): RecentlyViewedItem {
+  return {
+    id: product._id,
+    title: product.title,
+    cover: product.cover,
+    price: product.price,
+    category: product.category,
+    viewedAt,
+  };
+}
+
 export function getRecentlyViewed(): RecentlyViewedItem[] {
   if (!canUseStorage()) return [];
   try {
@@ -31,6 +49,10 @@ export function getRecentlyViewed(): RecentlyViewedItem[] {
   }
 }
 
+/**
+ * Record a product view locally (always), and POST to the API when logged in.
+ * PDP can keep calling this helper unchanged.
+ */
 export function trackRecentlyViewed(
   item: Omit<RecentlyViewedItem, 'viewedAt'>,
 ): RecentlyViewedItem[] {
@@ -43,5 +65,12 @@ export function trackRecentlyViewed(
   } catch {
     // ignore quota / private mode
   }
+
+  if (getAuthToken()) {
+    void recentlyViewedApi.trackRecentlyViewed(item.id).catch(() => {
+      // keep local history even if sync fails
+    });
+  }
+
   return merged;
 }
