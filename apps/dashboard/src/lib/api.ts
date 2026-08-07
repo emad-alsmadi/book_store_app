@@ -221,3 +221,44 @@ export const adminProductsApi = {
     return data;
   },
 };
+
+export type AppRole = 'user' | 'admin' | 'moderator';
+
+export type AdminUser = {
+  _id: string;
+  email: string;
+  username: string;
+  roles?: AppRole[];
+  createdAt?: string;
+  isAccountVerified?: boolean;
+};
+
+export type UserUpdatePayload = {
+  email?: string;
+  username?: string;
+  password?: string;
+  roles?: AppRole[];
+};
+
+export const adminUsersApi = {
+  getUsers: async (): Promise<AdminUser[]> => {
+    const { data } = await api.get<AdminUser[]>('/users');
+    return Array.isArray(data) ? data : [];
+  },
+
+  updateUser: async (
+    id: string,
+    payload: UserUpdatePayload,
+  ): Promise<{ message: string; updatedUser: AdminUser }> => {
+    const { data } = await api.put<{ message: string; updatedUser: AdminUser }>(
+      `/users/${id}`,
+      payload,
+    );
+    return data;
+  },
+
+  deleteUser: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/users/${id}`);
+    return data;
+  },
+};
