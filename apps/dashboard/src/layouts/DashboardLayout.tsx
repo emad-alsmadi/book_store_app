@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../hooks/useTheme';
+import { clearAuthSession, getAuthToken } from '../lib/auth';
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -24,8 +25,19 @@ const sidebarItems = [
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  if (!getAuthToken()) {
+    return (
+      <Navigate
+        to='/login'
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
+  }
 
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-gray-900'>
@@ -37,7 +49,7 @@ export default function DashboardLayout() {
       >
         <div className='p-4'>
           <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-            {isSidebarOpen ? 'TrendVault' : 'TV'}
+            {isSidebarOpen ? 'TrendVaulta' : 'TV'}
           </h1>
         </div>
 
@@ -72,7 +84,14 @@ export default function DashboardLayout() {
             {isSidebarOpen && <span className='ml-3'>Toggle Theme</span>}
           </button>
 
-          <button className='flex items-center w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 mt-2'>
+          <button
+            type='button'
+            onClick={() => {
+              clearAuthSession();
+              navigate('/login');
+            }}
+            className='flex items-center w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 mt-2'
+          >
             <LogOut className='w-5 h-5' />
             {isSidebarOpen && <span className='ml-3'>Logout</span>}
           </button>

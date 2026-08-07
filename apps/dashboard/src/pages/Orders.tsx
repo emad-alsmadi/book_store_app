@@ -1,115 +1,282 @@
-import { motion } from 'framer-motion'
-import { Search, Filter } from 'lucide-react'
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Search, RefreshCw } from 'lucide-react';
+import {
+  useAdminOrders,
+  useUpdateOrderStatusMutation,
+} from '../hooks/useAdminOrders';
+import {
+  errorMessage,
+  type AdminOrder,
+} from '../lib/api';
+import { getAuthToken } from '../lib/auth';
 
-const orders = [
-  { id: 'ORD-001', customer: 'John Doe', amount: '$49.00', status: 'Completed', date: '2024-01-15' },
-  { id: 'ORD-002', customer: 'Jane Smith', amount: '$29.00', status: 'Pending', date: '2024-01-14' },
-  { id: 'ORD-003', customer: 'Bob Johnson', amount: '$79.00', status: 'Completed', date: '2024-01-13' },
-  { id: 'ORD-004', customer: 'Alice Williams', amount: '$19.00', status: 'Cancelled', date: '2024-01-12' },
-  { id: 'ORD-005', customer: 'Charlie Brown', amount: '$39.00', status: 'Completed', date: '2024-01-11' },
-]
+const STATUS_FILTERS = [
+  { value: '', label: 'All statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'canceled', label: 'Canceled' },
+];
+
+function customerLabel(order: AdminOrder) {
+  if (order.user && typeof order.user === 'object') {
+    return order.user.email || order.user.username || 'Customer';
+  }
+  return typeof order.user === 'string' ? order.user : 'Customer';
+}
+
+function shortId(id: string) {
+  return id.length > 8 ? `${id.slice(0, 8)}…` : id;
+}
+
+function statusBadgeClass(status: string) {
+  switch (status) {
+    case 'delivered':
+      return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+    case 'paid':
+    case 'shipped':
+      return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+    case 'pending':
+      return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+    case 'canceled':
+      return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+    default:
+      return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+  }
+}
 
 export default function Orders() {
+  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [appliedQ, setAppliedQ] = useState('');
+
+  const query = useMemo(
+    () => ({
+      limit: 50,
+      status: statusFilter || undefined,
+      q: appliedQ || undefined,
+    }),
+    [statusFilter, appliedQ],
+  );
+
+  const ordersQ = useAdminOrders(query);
+  const updateMut = useUpdateOrderStatusMutation();
+  const orders = ordersQ.data?.data || [];
+  const meta = ordersQ.data?.meta;
+  const hasToken = Boolean(getAuthToken());
+
+  async function onChangeStatus(order: AdminOrder, next: string) {
+    if (!next || next === order.status) return;
+    const ok = window.confirm(
+      `Change order ${shortId(order._id)} from "${order.status}" to "${next}"?`,
+    );
+    if (!ok) return;
+    try {
+      await updateMut.mutateAsync({ id: order._id, status: next });
+    } catch (err) {
+      window.alert(errorMessage(err, 'Failed to update order'));
+    }
+  }
+
+  function onSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAppliedQ(search.trim());
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
     >
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Order Management
-        </h1>
-        <button className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-          <Filter className="w-5 h-5 mr-2" />
-          Filter Orders
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search orders..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Orders
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Live fulfillment from the API. Paid is set by Stripe — not from this
+            panel.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filter by status"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          >
+            {STATUS_FILTERS.map((s) => (
+              <option key={s.value || 'all'} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => void ordersQ.refetch()}
+            disabled={ordersQ.isFetching}
+            className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${ordersQ.isFetching ? 'animate-spin' : ''}`}
+            />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* Orders Table */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
-      >
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Order ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {orders.map((order, index) => (
-              <motion.tr
-                key={order.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {order.id}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {order.customer}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {order.amount}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    order.status === 'Completed'
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                      : order.status === 'Pending'
-                      ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-                      : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                  }`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {order.date}
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </motion.div>
+      <form onSubmit={onSearchSubmit} className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by full Mongo order id…"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+      </form>
+
+      {!hasToken && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+          Sign in with an admin account that has{' '}
+          <code className="font-mono">orders:read</code> /{' '}
+          <code className="font-mono">orders:write</code>.{' '}
+          <Link to="/login" className="font-semibold underline">
+            Go to login
+          </Link>
+        </div>
+      )}
+
+      {ordersQ.isLoading && (
+        <p className="py-10 text-center text-sm text-gray-500">Loading orders…</p>
+      )}
+
+      {ordersQ.isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          {errorMessage(ordersQ.error, 'Failed to load orders')}
+          {!hasToken && (
+            <>
+              {' '}
+              <Link to="/login" className="font-semibold underline">
+                Sign in
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+
+      {!ordersQ.isLoading && !ordersQ.isError && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px]">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  {[
+                    'Order',
+                    'Customer',
+                    'Total',
+                    'Payment',
+                    'Status',
+                    'Date',
+                    'Next action',
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-10 text-center text-sm text-gray-500"
+                    >
+                      No orders match this filter.
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => {
+                    const next = order.allowedNextStatuses || [];
+                    return (
+                      <tr
+                        key={order._id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/60"
+                      >
+                        <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900 dark:text-white">
+                          {shortId(order._id)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {customerLabel(order)}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                          ${Number(order.totalPrice || 0).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                          {order.paymentStatus || '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${statusBadgeClass(order.status)}`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString()
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {next.length === 0 ? (
+                            <span className="text-xs text-gray-400">—</span>
+                          ) : (
+                            <select
+                              value=""
+                              disabled={updateMut.isPending}
+                              aria-label={`Update status for ${order._id}`}
+                              onChange={(e) =>
+                                void onChangeStatus(order, e.target.value)
+                              }
+                              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                            >
+                              <option value="">Set status…</option>
+                              {next.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          {meta ? (
+            <p className="border-t border-gray-200 px-4 py-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Showing {orders.length} of {meta.total} orders
+            </p>
+          ) : null}
+        </motion.div>
+      )}
     </motion.div>
-  )
+  );
 }
