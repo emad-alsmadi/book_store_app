@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { verfiyToken } = require('../middlewares/verfiyToken');
+const { optionalVerifyToken } = require('../middlewares/optionalVerifyToken');
 const { checkRolePermission } = require('../middlewares/checkRolePermission');
 
 const {
@@ -11,8 +12,8 @@ const {
   deleteProduct,
 } = require('../controllers/product.controller');
 
-router.get('/products', getAllProducts);
-router.get('/products/:id', getProductById);
+router.get('/products', optionalVerifyToken, getAllProducts);
+router.get('/products/:id', optionalVerifyToken, getProductById);
 
 router.post(
   '/products',

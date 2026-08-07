@@ -17,9 +17,11 @@ const {
  * - page/limit: pagination
  * - sort: comma-separated fields, prefix with '-' for desc
  * - featured: show only featured products
+ * - includeInactive: admin/moderator only — include inactive products
+ * - isActive: admin/moderator only — filter by active flag (true|false)
  *
  * @route GET /api/products
- * @access Public
+ * @access Public (staff filters require Bearer token)
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @returns {Promise<void>} JSON containing data and meta
@@ -36,10 +38,23 @@ const getAllProducts = asyncHandler(async (req, res) => {
     limit = 12,
     sort = 'createdAt',
     featured,
+    includeInactive,
+    isActive,
   } = req.query;
 
-  const query = { isActive: true };
-  
+  const isStaff =
+    Array.isArray(req.user?.roles) &&
+    req.user.roles.some((r) => r === 'admin' || r === 'moderator');
+
+  const query = {};
+  if (isStaff && (includeInactive === 'true' || includeInactive === '1')) {
+    if (isActive === 'true' || isActive === 'false') {
+      query.isActive = isActive === 'true';
+    }
+  } else {
+    query.isActive = true;
+  }
+
   if (minPrice || maxPrice) {
     query.price = {};
     if (minPrice) query.price.$gte = Number(minPrice);

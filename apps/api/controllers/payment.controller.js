@@ -14,6 +14,10 @@ const {
   decrementStockForPaidOrder,
   incrementCouponUsedCount,
 } = require('../utils/commerce');
+const {
+  claimWebhookEvent,
+  releaseWebhookEvent,
+} = require('../utils/stripeWebhookIdempotency');
 
 function dollarsToCents(amount) {
   return Math.round(Number(amount) * 100);
@@ -256,13 +260,9 @@ const stripeWebhook = asyncHandler(async (req, res) => {
       .send(`Webhook signature verification failed: ${err.message}`);
   }
 
-  try {
-    await StripeWebhookEvent.create({ eventId: event.id });
-  } catch (e) {
-    if (e && e.code === 11000) {
-      return res.status(200).json({ received: true, duplicate: true });
-    }
-    throw e;
+  const claim = await claimWebhookEvent(StripeWebhookEvent, event.id);
+  if (claim.duplicate) {
+    return res.status(200).json({ received: true, duplicate: true });
   }
 
   try {
@@ -274,7 +274,7 @@ const stripeWebhook = asyncHandler(async (req, res) => {
         break;
     }
   } catch (procErr) {
-    await StripeWebhookEvent.deleteOne({ eventId: event.id }).catch(() => {});
+    await releaseWebhookEvent(StripeWebhookEvent, event.id);
     console.error('Stripe webhook processing error:', procErr);
     return res.status(500).json({ message: 'Webhook handler failed' });
   }

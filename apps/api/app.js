@@ -3,6 +3,7 @@ const logger = require('./middlewares/logger');
 const cors = require('cors');
 require('dotenv').config();
 const { connectToDB } = require('./config/db');
+const { createCorsOriginDelegate } = require('./middlewares/corsAllowlist');
 
 const paymentController = require('./controllers/payment.controller');
 
@@ -19,7 +20,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: true,
+    origin: createCorsOriginDelegate(),
     credentials: true,
   }),
 );
@@ -84,6 +85,13 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err && String(err.message || '').startsWith('CORS blocked')) {
+    return res.status(403).json({
+      message: 'Origin not allowed',
+      code: 'CORS_BLOCKED',
+    });
+  }
+
   const statusCode =
     err.statusCode &&
     Number(err.statusCode) >= 400 &&

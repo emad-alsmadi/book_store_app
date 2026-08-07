@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { verfiyToken } = require('../middlewares/verfiyToken');
 const { checkRolePermission } = require('../middlewares/checkRolePermission');
+const { couponValidateRateLimit } = require('../middlewares/rateLimit');
 
 const {
   getAllCoupons,
@@ -15,8 +16,8 @@ const {
 } = require('../controllers/coupon.controller');
 
 // Public routes
-router.post('/coupons/validate', validateCoupon);
-router.get('/coupons/code/:code', getCouponByCode);
+router.post('/coupons/validate', couponValidateRateLimit, validateCoupon);
+router.get('/coupons/code/:code', couponValidateRateLimit, getCouponByCode);
 
 // Admin routes
 router.get('/coupons', verfiyToken, checkRolePermission('coupons:read'), getAllCoupons);
