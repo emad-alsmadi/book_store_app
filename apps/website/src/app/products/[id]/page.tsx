@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useCart } from '@/lib/cartStore';
-import { CompleteTheLookSection } from '@/components/products/CompleteTheLookSection';
+import { FrequentlyBoughtTogether } from '@/components/products/FrequentlyBoughtTogether';
 import { trackRecentlyViewed } from '@/lib/recentlyViewed';
 
 export default function ProductDetailPage({
@@ -374,9 +374,15 @@ export default function ProductDetailPage({
           </motion.div>
         </div>
 
-        <CompleteTheLookSection
-          productId={product._id}
-          category={product.category}
+        <FrequentlyBoughtTogether
+          primary={{
+            _id: product._id,
+            title: product.title,
+            price: product.price,
+            cover: product.cover,
+            category: product.category,
+            stock: product.stock,
+          }}
         />
 
         {/* Product Details */}

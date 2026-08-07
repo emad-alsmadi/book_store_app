@@ -9,6 +9,7 @@ import { PopularCategories } from '@/components/home/PopularCategories';
 import { DealsRail } from '@/components/home/DealsRail';
 import { FeaturedProductsSection } from '@/components/home/FeaturedProductsSection';
 import { FeaturedBrandsStrip } from '@/components/home/FeaturedBrandsStrip';
+import { GiftFinderSection } from '@/components/home/GiftFinderSection';
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection';
 import { InspiredByBrowsingSection } from '@/components/home/InspiredByBrowsingSection';
 import { EditorialLookbookSection } from '@/components/home/EditorialLookbookSection';
@@ -61,6 +62,8 @@ export default function HomePage() {
       />
 
       <FeaturedBrandsStrip />
+
+      <GiftFinderSection />
 
       <RecentlyViewedSection />
 

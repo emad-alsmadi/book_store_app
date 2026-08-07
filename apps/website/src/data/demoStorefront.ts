@@ -56,6 +56,22 @@ export type DemoLookbookStory = {
   tone: 'rose' | 'stone' | 'teal';
 };
 
+export type DemoGiftOption = {
+  id: string;
+  label: string;
+  /** Search / filter hints used to build /products URL */
+  q?: string;
+  category?: string;
+  maxPrice?: number;
+  minPrice?: number;
+};
+
+export type DemoGiftFinderConfig = {
+  occasions: DemoGiftOption[];
+  recipients: DemoGiftOption[];
+  budgets: DemoGiftOption[];
+};
+
 /** DEMO — trust / service strip */
 export const DEMO_TRUST_ITEMS: DemoTrustItem[] = [
   {
@@ -211,6 +227,61 @@ export const DEMO_CATEGORY_SHORTCUTS: DemoCategoryShortcut[] = [
     icon: 'bag',
   },
 ];
+
+/**
+ * DEMO — gift finder facet options.
+ * TODO(api): GET /api/storefront/gift-finder
+ */
+export const DEMO_GIFT_FINDER: DemoGiftFinderConfig = {
+  occasions: [
+    { id: 'birthday', label: 'Birthday', q: 'gift' },
+    { id: 'thank-you', label: 'Thank you', q: 'gift' },
+    { id: 'self-care', label: 'Self-care', category: 'beauty', q: 'skincare' },
+    { id: 'housewarming', label: 'Housewarming', category: 'home', q: 'home' },
+    { id: 'just-because', label: 'Just because', q: 'gift' },
+  ],
+  recipients: [
+    { id: 'for-her', label: 'For her', q: 'beauty' },
+    { id: 'for-him', label: 'For him', q: 'grooming' },
+    { id: 'for-home', label: 'For home', category: 'home' },
+    { id: 'for-anyone', label: 'For anyone', q: 'gift' },
+  ],
+  budgets: [
+    { id: 'under-25', label: 'Under $25', maxPrice: 25 },
+    { id: '25-50', label: '$25–$50', minPrice: 25, maxPrice: 50 },
+    { id: '50-plus', label: '$50+', minPrice: 50 },
+    { id: 'any', label: 'Any budget' },
+  ],
+};
+
+/** Build PLP URL from gift-finder demo selections */
+export function buildGiftFinderHref(selection: {
+  occasionId?: string | null;
+  recipientId?: string | null;
+  budgetId?: string | null;
+}): string {
+  const occasion = DEMO_GIFT_FINDER.occasions.find(
+    (o) => o.id === selection.occasionId,
+  );
+  const recipient = DEMO_GIFT_FINDER.recipients.find(
+    (r) => r.id === selection.recipientId,
+  );
+  const budget = DEMO_GIFT_FINDER.budgets.find(
+    (b) => b.id === selection.budgetId,
+  );
+
+  const params = new URLSearchParams();
+  const category = occasion?.category || recipient?.category;
+  const q = recipient?.q || occasion?.q || 'gift';
+
+  if (category) params.set('category', category);
+  if (q) params.set('q', q);
+  if (budget?.minPrice != null) params.set('minPrice', String(budget.minPrice));
+  if (budget?.maxPrice != null) params.set('maxPrice', String(budget.maxPrice));
+
+  const qs = params.toString();
+  return qs ? `/products?${qs}` : '/products?q=gift';
+}
 
 /** DEMO — editorial lookbook stories (replace with GET /api/storefront/lookbooks) */
 export const DEMO_LOOKBOOK_STORIES: DemoLookbookStory[] = [
