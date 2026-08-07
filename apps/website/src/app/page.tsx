@@ -11,6 +11,7 @@ import { FeaturedProductsSection } from '@/components/home/FeaturedProductsSecti
 import { FeaturedBrandsStrip } from '@/components/home/FeaturedBrandsStrip';
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection';
 import { InspiredByBrowsingSection } from '@/components/home/InspiredByBrowsingSection';
+import { EditorialLookbookSection } from '@/components/home/EditorialLookbookSection';
 import { WhyChooseUs } from '@/components/home/WhyChooseUs';
 import { Testimonials } from '@/components/home/Testimonials';
 import { CTASection } from '@/components/home/CTASection';
@@ -67,6 +68,8 @@ export default function HomePage() {
         products={products}
         loading={loading}
       />
+
+      <EditorialLookbookSection />
 
       <WhyChooseUs />
 

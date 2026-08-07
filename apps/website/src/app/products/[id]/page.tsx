@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useCart } from '@/lib/cartStore';
-import { ProductCard } from '@/components/products/ProductCard';
+import { CompleteTheLookSection } from '@/components/products/CompleteTheLookSection';
 import { trackRecentlyViewed } from '@/lib/recentlyViewed';
 
 export default function ProductDetailPage({
@@ -373,6 +373,11 @@ export default function ProductDetailPage({
             </div>
           </motion.div>
         </div>
+
+        <CompleteTheLookSection
+          productId={product._id}
+          category={product.category}
+        />
 
         {/* Product Details */}
         <motion.div

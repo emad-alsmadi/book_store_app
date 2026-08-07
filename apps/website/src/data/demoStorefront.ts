@@ -5,6 +5,8 @@
  * TODO(api): GET /api/storefront/home
  * TODO(api): GET /api/offers
  * TODO(api): GET /api/brands?featured=true
+ * TODO(api): GET /api/storefront/lookbooks
+ * TODO(api): GET /api/products/:id/bundles
  */
 
 export type DemoBadge = 'bestseller' | 'lowStock' | 'new';
@@ -40,6 +42,18 @@ export type DemoCategoryShortcut = {
   href: string;
   accent: string;
   icon: 'sparkles' | 'shirt' | 'heart' | 'watch' | 'home' | 'gift' | 'sun' | 'bag';
+};
+
+export type DemoLookbookStory = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  href: string;
+  /** Local placeholder assets only — not scraped from third parties */
+  imageUrl: string;
+  tone: 'rose' | 'stone' | 'teal';
 };
 
 /** DEMO — trust / service strip */
@@ -195,6 +209,40 @@ export const DEMO_CATEGORY_SHORTCUTS: DemoCategoryShortcut[] = [
     href: '/products?sort=createdAt',
     accent: 'from-cyan-500 to-blue-600',
     icon: 'bag',
+  },
+];
+
+/** DEMO — editorial lookbook stories (replace with GET /api/storefront/lookbooks) */
+export const DEMO_LOOKBOOK_STORIES: DemoLookbookStory[] = [
+  {
+    id: 'look-morning',
+    eyebrow: 'Beauty edit',
+    title: 'Soft morning ritual',
+    body: 'Layer lightweight textures that wake skin without the fuss. Original TrendVaulta styling — demo content only.',
+    ctaLabel: 'Shop the ritual',
+    href: '/products?category=beauty',
+    imageUrl: '/images/1.webp',
+    tone: 'rose',
+  },
+  {
+    id: 'look-wardrobe',
+    eyebrow: 'Fashion edit',
+    title: 'Quiet wardrobe staples',
+    body: 'Clean silhouettes and easy layers for days that move. Curated for polish, not noise.',
+    ctaLabel: 'Browse fashion',
+    href: '/products?category=fashion',
+    imageUrl: '/images/2.webp',
+    tone: 'stone',
+  },
+  {
+    id: 'look-home',
+    eyebrow: 'Lifestyle edit',
+    title: 'At-home calm corners',
+    body: 'Small accents that make everyday spaces feel intentional — candles, linen, soft light.',
+    ctaLabel: 'Explore lifestyle',
+    href: '/products?category=lifestyle',
+    imageUrl: '/images/3.webp',
+    tone: 'teal',
   },
 ];
 
