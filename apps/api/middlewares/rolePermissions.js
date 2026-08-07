@@ -1,50 +1,51 @@
-// Role-based permission configuration
+// Role-based permission configuration (TrendVaulta retail domain)
 const ROLE_PERMISSIONS = {
-  // User permissions - can read only
-  user: ['creators:read', 'templates:read', 'users:read:own'],
+  user: ['users:read:own'],
 
-  // Moderator permissions - can read/write most things
   moderator: [
-    'creators:read',
-    'creators:write',
-    'templates:read',
-    'templates:write',
+    'products:read',
+    'products:write',
+    'brands:read',
+    'brands:write',
+    'coupons:read',
+    'orders:read',
     'users:read',
   ],
 
-  // Admin permissions - can do everything
   admin: [
-    'creators:read',
-    'creators:write',
-    'creators:delete',
-    'templates:read',
-    'templates:write',
-    'templates:delete',
+    'products:read',
+    'products:write',
+    'products:delete',
+    'brands:read',
+    'brands:write',
+    'brands:delete',
+    'coupons:read',
+    'coupons:write',
+    'coupons:delete',
+    'orders:read',
+    'orders:write',
     'users:read',
     'users:write',
     'users:delete',
   ],
 };
 
-// Check if user has specific permission
 const hasPermission = (userPermissions, requiredPermission) => {
   return userPermissions.some(
     (permission) => permission === requiredPermission,
   );
 };
 
-// Get all permissions for a role
 const getRolePermissions = (role) => {
   return ROLE_PERMISSIONS[role] || [];
 };
 
-// Get all permissions for user roles (array)
 const getUserPermissions = (userRoles) => {
   const allPermissions = new Set();
+  const roles = Array.isArray(userRoles) ? userRoles : [];
 
-  userRoles.forEach((role) => {
-    const rolePerms = getRolePermissions(role);
-    rolePerms.forEach((perm) => allPermissions.add(perm));
+  roles.forEach((role) => {
+    getRolePermissions(role).forEach((perm) => allPermissions.add(perm));
   });
 
   return Array.from(allPermissions);

@@ -8,9 +8,9 @@ const ReviewSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    template: {
+    product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Template',
+      ref: 'Product',
       required: true,
     },
     rating: {
@@ -33,14 +33,13 @@ const ReviewSchema = new mongoose.Schema(
   },
 );
 
-// Ensure one review per user per template
-ReviewSchema.index({ user: 1, template: 1 }, { unique: true });
+ReviewSchema.index({ user: 1, product: 1 }, { unique: true });
 
 const Review = mongoose.model('Review', ReviewSchema);
 
 const validateCreateReview = (obj) => {
   const schema = Joi.object({
-    template: Joi.string().hex().length(24).required(),
+    product: Joi.string().hex().length(24).required(),
     rating: Joi.number().min(1).max(5).required(),
     comment: Joi.string().min(3).max(1000).required(),
   });

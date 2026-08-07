@@ -57,11 +57,10 @@ const validateRegisterUser = (obj) => {
     email: Joi.string().trim().min(5).max(100).required().email(),
     username: Joi.string().trim().min(2).max(200).required(),
     password: Joi.string().trim().min(8).max(100).required(),
-    roles: Joi.array()
-      .items(Joi.string().valid('user', 'admin', 'moderator'))
-      .default(['user']),
+    // Public registration must never accept client-supplied roles
+    roles: Joi.any().forbidden(),
   });
-  return schema.validate(obj);
+  return schema.validate(obj, { stripUnknown: true });
 };
 // Validate Login User
 const validateLoginUser = (obj) => {

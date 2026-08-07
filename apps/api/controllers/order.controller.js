@@ -2,6 +2,12 @@ const asyncHandler = require('express-async-handler');
 const { Order, validateCreateOrder } = require('../models/Order');
 const { Product } = require('../models/Product');
 const { serializeOrder, serializeOrders } = require('../utils/serializeOrder');
+const {
+  buildNormalizedOrderLines,
+  resolveShippingPrice,
+  loadValidCouponByCode,
+  calculateCouponDiscount,
+} = require('../utils/commerce');
 
 const createOrder = asyncHandler(async (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
@@ -26,50 +32,38 @@ const createOrder = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const { items, shippingAddress } = value;
-  const shippingPrice = Number(value.shippingPrice ?? 0);
-  const taxPrice = Number(value.taxPrice ?? 0);
+  const { items, shippingAddress, couponCode, delivery, shippingMethod } =
+    value;
 
-  // Validate that all product items exist
-  const productIds = items.map((i) => i.productId);
-  const products = await Product.find({ _id: { $in: productIds } });
-  if (products.length !== productIds.length) {
-    res.status(400);
-    throw new Error('One or more products not found');
-  }
+  const { normalizedItems, itemsPrice } = await buildNormalizedOrderLines(
+    Product,
+    items,
+  );
 
-  const productsById = new Map(products.map((p) => [String(p._id), p]));
-
-  const normalizedItems = items.map((i) => {
-    const p = productsById.get(String(i.productId));
-    if (!p) {
-      return null;
+  let discountAmount = 0;
+  let couponId = null;
+  let normalizedCouponCode = '';
+  if (couponCode) {
+    const coupon = await loadValidCouponByCode(couponCode);
+    const result = calculateCouponDiscount(coupon, itemsPrice);
+    if (!result.valid) {
+      return res.status(400).json({ message: result.message });
     }
-
-    return {
-      productId: p._id,
-      title: p.title,
-      price: Number(p.price),
-      qty: Number(i.qty),
-      cover: p.cover,
-      variant: i.variant,
-    };
-  });
-
-  const missing = normalizedItems.find((x) => !x);
-  if (missing) {
-    return res
-      .status(404)
-      .json({ message: 'One or more products were not found' });
+    discountAmount = result.discountAmount;
+    couponId = coupon._id;
+    normalizedCouponCode = coupon.code;
   }
 
-  const finalItems = normalizedItems;
-  const itemsPrice = finalItems.reduce((sum, it) => sum + it.price * it.qty, 0);
-  const totalPrice = itemsPrice + shippingPrice + taxPrice;
+  const shippingPrice = resolveShippingPrice({ delivery, shippingMethod });
+  const taxPrice = 0;
+  const totalPrice = Math.max(
+    0,
+    itemsPrice - discountAmount + shippingPrice + taxPrice,
+  );
 
   const order = await Order.create({
     user: userId,
-    items: finalItems,
+    items: normalizedItems,
     shippingAddress: {
       ...shippingAddress,
       notes: shippingAddress.notes || '',
@@ -78,6 +72,9 @@ const createOrder = asyncHandler(async (req, res) => {
     itemsPrice,
     shippingPrice,
     taxPrice,
+    discountAmount,
+    couponCode: normalizedCouponCode,
+    couponId,
     totalPrice,
     paymentStatus: 'unpaid',
   });

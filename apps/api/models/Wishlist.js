@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const Joi = require('joi');
 
 const WishlistSchema = new mongoose.Schema(
   {
@@ -8,9 +7,9 @@ const WishlistSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    template: {
+    product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Template',
+      ref: 'Product',
       required: true,
     },
   },
@@ -20,12 +19,10 @@ const WishlistSchema = new mongoose.Schema(
   },
 );
 
-// Create unique compound index to prevent duplicate wishlist entries
-WishlistSchema.index({ user: 1, template: 1 }, { unique: true });
-
-// Create additional indexes for optimized lookups
+// One wishlist row per user+product
+WishlistSchema.index({ user: 1, product: 1 }, { unique: true });
 WishlistSchema.index({ user: 1 });
-WishlistSchema.index({ template: 1 });
+WishlistSchema.index({ product: 1 });
 
 const Wishlist = mongoose.model('Wishlist', WishlistSchema);
 

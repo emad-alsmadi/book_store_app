@@ -43,7 +43,7 @@ app.use('/api/', require('./routes/coupons'));
 // Friendly roots (this process is API-only; the Next.js app is a separate server)
 app.get('/', (req, res) => {
   res.status(200).json({
-    service: 'Craftify API',
+    service: 'TrendVaulta API',
     message:
       'This is the backend only. Open your Next.js frontend (usually another port) for the website.',
     apiOverview: '/api/',
@@ -57,13 +57,22 @@ app.get('/favicon.ico', (_req, res) => {
 
 app.get('/api/', (_req, res) => {
   res.status(200).json({
-    service: 'Craftify REST API',
+    service: 'TrendVaulta REST API',
     examples: [
-      'GET /api/templates',
-      'GET /api/creators',
+      'GET /api/products',
+      'GET /api/brands',
       'POST /api/auth/login',
       'GET /api/orders/my',
+      'POST /api/payments/checkout-session',
     ],
+  });
+});
+
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'trendvaulta-api',
+    timestamp: new Date().toISOString(),
   });
 });
 

@@ -6,68 +6,24 @@ const {
   getStripeOrThrow,
   getFrontendBaseUrl,
 } = require('../services/stripe.service');
+const {
+  buildNormalizedOrderLines,
+  resolveShippingPrice,
+  loadValidCouponByCode,
+  calculateCouponDiscount,
+  decrementStockForPaidOrder,
+  incrementCouponUsedCount,
+} = require('../utils/commerce');
 
 function dollarsToCents(amount) {
   return Math.round(Number(amount) * 100);
 }
 
-async function buildNormalizedOrderLines(items) {
-  const productIds = items.map((i) => i.productId);
-  const products = await Product.find({ _id: { $in: productIds } });
-  if (products.length !== productIds.length) {
-    const err = new Error('One or more products not found');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const productsById = new Map(products.map((p) => [String(p._id), p]));
-
-  const normalizedItems = items.map((i) => {
-    const p = productsById.get(String(i.productId));
-    if (!p) return null;
-    return {
-      productId: p._id,
-      title: p.title,
-      price: Number(p.price),
-      qty: Number(i.qty),
-      cover: p.cover,
-      variant: i.variant,
-    };
-  });
-
-  if (normalizedItems.some((x) => !x)) {
-    const err = new Error('One or more products not found');
-    err.statusCode = 404;
-    throw err;
-  }
-
-  const itemsPrice = normalizedItems.reduce(
-    (sum, it) => sum + it.price * it.qty,
-    0,
-  );
-
-  return { normalizedItems, itemsPrice };
-}
-
-/**
- * Public flag so the storefront can skip Stripe Checkout when the secret key is not set.
- * @desc One-time payment (Stripe) readiness
- * @route GET /api/payments/setup-status
- * @method GET
- * @access Public
- */
 function getPaymentsSetupStatus(_req, res) {
   const ready = Boolean(process.env.STRIPE_SECRET_KEY?.trim());
   res.status(200).json({ ready });
 }
 
-/**
- * Creates order draft + Stripe Checkout Session (payment mode) for product purchases.
- * @desc One-time cart checkout via Stripe
- * @route POST /api/payments/checkout-session
- * @method POST
- * @access Private (Bearer token)
- */
 const createCheckoutSession = asyncHandler(async (req, res) => {
   let stripe;
   try {
@@ -91,13 +47,42 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const { items, shippingAddress } = value;
-  const shippingPrice = Number(value.shippingPrice ?? 0);
-  const taxPrice = Number(value.taxPrice ?? 0);
+  const { items, shippingAddress, couponCode, delivery, shippingMethod } =
+    value;
 
-  const { normalizedItems, itemsPrice } =
-    await buildNormalizedOrderLines(items);
-  const totalPrice = itemsPrice + shippingPrice + taxPrice;
+  let normalizedItems;
+  let itemsPrice;
+  try {
+    ({ normalizedItems, itemsPrice } = await buildNormalizedOrderLines(
+      Product,
+      items,
+    ));
+  } catch (lineErr) {
+    return res.status(lineErr.statusCode || 400).json({
+      message: lineErr.message || 'Unable to build order lines',
+    });
+  }
+
+  let discountAmount = 0;
+  let couponId = null;
+  let normalizedCouponCode = '';
+  if (couponCode) {
+    const coupon = await loadValidCouponByCode(couponCode);
+    const result = calculateCouponDiscount(coupon, itemsPrice);
+    if (!result.valid) {
+      return res.status(400).json({ message: result.message });
+    }
+    discountAmount = result.discountAmount;
+    couponId = coupon._id;
+    normalizedCouponCode = coupon.code;
+  }
+
+  const shippingPrice = resolveShippingPrice({ delivery, shippingMethod });
+  const taxPrice = 0;
+  const totalPrice = Math.max(
+    0,
+    itemsPrice - discountAmount + shippingPrice + taxPrice,
+  );
 
   const order = await Order.create({
     user: userId,
@@ -110,10 +95,14 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     itemsPrice,
     shippingPrice,
     taxPrice,
+    discountAmount,
+    couponCode: normalizedCouponCode,
+    couponId,
     totalPrice,
     paymentStatus: 'pending',
     stripeSessionId: '',
     paymentIntentId: '',
+    stockDecremented: false,
   });
 
   const lineItems = normalizedItems.map((it) => ({
@@ -155,7 +144,7 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
 
   let session;
   try {
-    session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'payment',
       line_items: lineItems,
       success_url: `${frontend}/checkout/success?order_id=${order._id}&session_id={CHECKOUT_SESSION_ID}`,
@@ -165,6 +154,7 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
         orderId: String(order._id),
         userId: String(userId),
         kind: 'order_payment',
+        totalPrice: String(totalPrice),
       },
       payment_intent_data: {
         metadata: {
@@ -172,7 +162,20 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
           userId: String(userId),
         },
       },
-    });
+    };
+
+    // Apply server-calculated discount via a one-time Stripe coupon (unit_amount cannot be negative)
+    if (discountAmount > 0) {
+      const stripeCoupon = await stripe.coupons.create({
+        amount_off: dollarsToCents(discountAmount),
+        currency: 'usd',
+        duration: 'once',
+        name: normalizedCouponCode || 'Order discount',
+      });
+      sessionParams.discounts = [{ coupon: stripeCoupon.id }];
+    }
+
+    session = await stripe.checkout.sessions.create(sessionParams);
   } catch (stripeErr) {
     await Order.findByIdAndDelete(order._id);
     const raw =
@@ -208,6 +211,16 @@ async function markOrderPaidFromSession(session) {
   const pi = session.payment_intent;
   const paymentIntentId = typeof pi === 'string' ? pi : pi?.id || '';
 
+  if (!order.stockDecremented) {
+    await decrementStockForPaidOrder(Product, order);
+    order.stockDecremented = true;
+  }
+
+  if (order.couponId && !order.couponIncremented) {
+    await incrementCouponUsedCount(order.couponId);
+    order.couponIncremented = true;
+  }
+
   order.paymentStatus = 'paid';
   order.status = 'paid';
   order.stripeSessionId = session.id || order.stripeSessionId;
@@ -225,13 +238,6 @@ async function handleCheckoutSessionCompleted(session) {
   }
 }
 
-/**
- * Verifies Stripe webhook signatures and syncs paid orders.
- * @desc Stripe webhook receiver (raw body)
- * @route POST /api/webhooks/stripe
- * @method POST
- * @access Stripe only (signing secret)
- */
 const stripeWebhook = asyncHandler(async (req, res) => {
   const stripe = getStripeOrThrow();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -276,13 +282,6 @@ const stripeWebhook = asyncHandler(async (req, res) => {
   res.status(200).json({ received: true });
 });
 
-/**
- * Verify payment status from Stripe and update order if paid
- * @desc Manually verify payment status (fallback for webhook issues)
- * @route POST /api/payments/verify-payment
- * @method POST
- * @access Private (Bearer token)
- */
 const verifyPaymentStatus = asyncHandler(async (req, res) => {
   const stripe = getStripeOrThrow();
   const userId = req.user?.id ?? req.user?._id;
@@ -300,7 +299,7 @@ const verifyPaymentStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Order not found' });
   }
 
-  if (order.user.toString() !== userId) {
+  if (order.user.toString() !== String(userId)) {
     return res
       .status(403)
       .json({ message: 'Not authorized to access this order' });
@@ -324,13 +323,13 @@ const verifyPaymentStatus = asyncHandler(async (req, res) => {
     if (session.payment_status === 'paid' && session.status === 'complete') {
       await markOrderPaidFromSession(session);
       return res.status(200).json({ paymentStatus: 'paid', verified: true });
-    } else {
-      return res.status(200).json({
-        paymentStatus: session.payment_status,
-        sessionStatus: session.status,
-        verified: false,
-      });
     }
+
+    return res.status(200).json({
+      paymentStatus: session.payment_status,
+      sessionStatus: session.status,
+      verified: false,
+    });
   } catch (stripeErr) {
     console.error('Stripe session retrieval error:', stripeErr);
     return res

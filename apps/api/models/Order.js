@@ -3,9 +3,9 @@ const Joi = require('joi');
 
 const OrderItemSchema = new mongoose.Schema(
   {
-    template: {
+    productId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Template',
+      ref: 'Product',
       required: true,
     },
     title: {
@@ -27,6 +27,12 @@ const OrderItemSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    variant: {
+      size: { type: String, trim: true },
+      color: { type: String, trim: true },
+      colorCode: { type: String, trim: true },
+      sku: { type: String, trim: true },
     },
   },
   { _id: false },
@@ -115,6 +121,23 @@ const OrderSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    discountAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    couponCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: '',
+    },
+    couponId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Coupon',
+      default: null,
+    },
     totalPrice: {
       type: Number,
       required: true,
@@ -138,6 +161,14 @@ const OrderSchema = new mongoose.Schema(
     paidAt: {
       type: Date,
     },
+    stockDecremented: {
+      type: Boolean,
+      default: false,
+    },
+    couponIncremented: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
@@ -149,20 +180,17 @@ const validateCreateOrder = (obj) => {
     items: Joi.array()
       .items(
         Joi.object({
-          template: Joi.string().hex().length(24),
-          templateId: Joi.string().hex().length(24),
+          productId: Joi.string().hex().length(24).required(),
           qty: Joi.number().integer().min(1).required(),
-          title: Joi.string().trim().min(1).max(300).optional(),
-          price: Joi.number().min(0).optional(),
-          cover: Joi.string().trim().min(3).max(2000).optional(),
-        }).custom((value, helpers) => {
-          const id = value.template || value.templateId;
-          if (!id) {
-            return helpers.error('any.custom', {
-              message: 'Each item requires template or templateId',
-            });
-          }
-          return { ...value, template: id };
+          variant: Joi.object({
+            size: Joi.string().trim().allow('', null),
+            color: Joi.string().trim().allow('', null),
+            colorCode: Joi.string().trim().allow('', null),
+            sku: Joi.string().trim().allow('', null),
+          }).optional(),
+          // Client price/title/cover ignored by server — allowed for backward compat only
+          title: Joi.any().strip(),
+          price: Joi.any().strip(),
         }),
       )
       .min(1)
@@ -175,11 +203,17 @@ const validateCreateOrder = (obj) => {
       zip: Joi.string().trim().min(2).max(20).required(),
       notes: Joi.string().trim().max(500).allow('').optional(),
     }).required(),
-    shippingPrice: Joi.number().min(0).optional(),
-    taxPrice: Joi.number().min(0).optional(),
+    // Client shippingPrice/taxPrice ignored — use delivery / shippingMethod
+    delivery: Joi.boolean().optional(),
+    shippingMethod: Joi.string()
+      .valid('none', 'standard', 'express')
+      .optional(),
+    couponCode: Joi.string().trim().max(50).allow('', null).optional(),
+    shippingPrice: Joi.any().strip(),
+    taxPrice: Joi.any().strip(),
   });
 
-  return schema.validate(obj);
+  return schema.validate(obj, { stripUnknown: true });
 };
 
 module.exports = {

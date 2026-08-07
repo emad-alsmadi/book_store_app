@@ -113,10 +113,22 @@ const getAllProducts = asyncHandler(async (req, res) => {
  * @returns {Promise<void>} JSON product document
  */
 const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id)
-    .populate('brand', ['name', 'slug', 'logo', 'website', 'country']);
+  const product = await Product.findById(req.params.id).populate('brand', [
+    'name',
+    'slug',
+    'logo',
+    'website',
+    'country',
+  ]);
 
   if (!product) {
+    return res.status(404).json({ message: 'Product not found' });
+  }
+
+  const isStaff =
+    Array.isArray(req.user?.roles) &&
+    req.user.roles.some((r) => r === 'admin' || r === 'moderator');
+  if (product.isActive === false && !isStaff) {
     return res.status(404).json({ message: 'Product not found' });
   }
 

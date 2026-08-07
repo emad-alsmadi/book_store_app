@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "build": "echo 'No build step required for Express backend'"
+    "build": "echo 'No build step required for Express backend'",
+    "test": "node --test utils/commerce.test.js"
   },
   "author": "",
   "license": "ISC",

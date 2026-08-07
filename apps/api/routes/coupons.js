@@ -28,6 +28,12 @@ router.put('/coupons/:id', verfiyToken, checkRolePermission('coupons:write'), up
 
 router.delete('/coupons/:id', verfiyToken, checkRolePermission('coupons:delete'), deleteCoupon);
 
-router.post('/coupons/:id/use', verfiyToken, incrementCouponUsage);
+// Usage is incremented on paid webhook/verify — admin-only manual bump for ops
+router.post(
+  '/coupons/:id/use',
+  verfiyToken,
+  checkRolePermission('coupons:write'),
+  incrementCouponUsage,
+);
 
 module.exports = router;

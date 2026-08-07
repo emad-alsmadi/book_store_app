@@ -1,70 +1,9 @@
-const { Template } = require('./models/Template');
-const { Creator } = require('./models/Creator');
-const { LicenseType } = require('./models/LicenseType');
+const { Product } = require('./models/Product');
+const { Brand } = require('./models/Brand');
 const { Coupon } = require('./models/Coupon');
-const { creators, templates } = require('./data');
+const { buildSeedData } = require('./data');
 const { connectToDB } = require('./config/db');
 require('dotenv').config();
-
-const licenseTypes = [
-  {
-    name: 'Personal',
-    slug: 'personal',
-    priceMultiplier: 1,
-    description: 'Perfect for personal projects and non-commercial use',
-    features: [
-      'Use in unlimited personal projects',
-      'Lifetime updates',
-      '6 months support',
-      'Single end product',
-    ],
-    restrictions: [
-      'Cannot be used for commercial purposes',
-      'Cannot resell or redistribute',
-      'Cannot be used in client projects',
-    ],
-    supportDuration: 6,
-    isActive: true,
-  },
-  {
-    name: 'Commercial',
-    slug: 'commercial',
-    priceMultiplier: 5,
-    description: 'Ideal for commercial projects and client work',
-    features: [
-      'Use in unlimited commercial projects',
-      'Use in client projects',
-      'Lifetime updates',
-      '6 months support',
-      'Create multiple end products',
-    ],
-    restrictions: [
-      'Cannot resell or redistribute',
-      'Cannot claim as your own design',
-    ],
-    supportDuration: 6,
-    isActive: true,
-  },
-  {
-    name: 'Extended',
-    slug: 'extended',
-    priceMultiplier: 10,
-    description: 'For agencies and large-scale commercial use',
-    features: [
-      'All Commercial license benefits',
-      '12 months priority support',
-      'SaaS application use allowed',
-      'Resell as part of a larger product',
-      'Create unlimited end products',
-    ],
-    restrictions: [
-      'Cannot resell the template as-is',
-      'Cannot claim as your own design',
-    ],
-    supportDuration: 12,
-    isActive: true,
-  },
-];
 
 const coupons = [
   {
@@ -78,7 +17,7 @@ const coupons = [
     usedCount: 0,
     minimumOrderAmount: 10,
     isActive: true,
-    description: 'Summer sale - 20% off all templates',
+    description: 'Summer sale - 20% off all products',
   },
   {
     code: 'WELCOME10',
@@ -147,43 +86,83 @@ const coupons = [
   },
 ];
 
-// Import Templates & Creators & LicenseTypes & Coupons
+// Import Products, Brands & Coupons
 const importData = async () => {
   try {
     await connectToDB();
-    await Creator.deleteMany({});
-    await Template.deleteMany({});
-    await LicenseType.deleteMany({});
+
+    // Get products per category from command line argument or default to 50
+    const productsPerCategory = parseInt(process.argv[3]) || 50;
+
+    console.log('🗑️  Clearing existing data...');
+    await Brand.deleteMany({});
+    await Product.deleteMany({});
     await Coupon.deleteMany({});
-    await Creator.insertMany(creators);
-    await Template.insertMany(templates);
-    await LicenseType.insertMany(licenseTypes);
+
+    console.log('📦 Generating new data...');
+    const { brands, products } = buildSeedData(productsPerCategory);
+
+    console.log(`🏢 Inserting ${brands.length} brands...`);
+    await Brand.insertMany(brands);
+
+    console.log(`🛍️  Inserting ${products.length} products...`);
+    await Product.insertMany(products);
+
+    console.log(`🎫 Inserting ${coupons.length} coupons...`);
     await Coupon.insertMany(coupons);
-    console.log('Data imported');
+
+    console.log('✅ Data imported successfully!');
+    console.log(`📊 Summary:`);
+    console.log(`   - Brands: ${brands.length}`);
+    console.log(`   - Products: ${products.length}`);
+    console.log(`   - Coupons: ${coupons.length}`);
+    console.log(`   - Products per category: ~${productsPerCategory}`);
+
     process.exit();
   } catch (error) {
-    console.log('Error', error);
+    console.log('❌ Error:', error);
     process.exit(1);
   }
 };
 
-// Remove Templates & Creators & LicenseTypes & Coupons
+// Remove Products, Brands & Coupons
 const removeData = async () => {
   try {
     await connectToDB();
-    await Template.deleteMany({});
-    await Creator.deleteMany({});
-    await LicenseType.deleteMany({});
+    console.log('🗑️  Removing data...');
+    await Product.deleteMany({});
+    await Brand.deleteMany({});
     await Coupon.deleteMany({});
-    console.log('Data removed');
+    console.log('✅ Data removed successfully!');
     process.exit();
   } catch (error) {
-    console.log('Error', error);
+    console.log('❌ Error:', error);
     process.exit(1);
   }
 };
+
+// Display usage information
+const showUsage = () => {
+  console.log('📖 Seeder Usage:');
+  console.log('');
+  console.log('  Import data:');
+  console.log('    node seeder.js -import [productsPerCategory]');
+  console.log('    Example: node seeder.js -import 50');
+  console.log('    Default: 50 products per category');
+  console.log('');
+  console.log('  Remove data:');
+  console.log('    node seeder.js -remove');
+  console.log('');
+  console.log('  Show this help:');
+  console.log('    node seeder.js -help');
+  console.log('');
+  process.exit();
+};
+
 if (process.argv[2] === '-import') {
   importData();
 } else if (process.argv[2] === '-remove') {
   removeData();
+} else if (process.argv[2] === '-help' || !process.argv[2]) {
+  showUsage();
 }

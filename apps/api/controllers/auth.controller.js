@@ -28,12 +28,13 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'This user already registered' });
   }
   const salt = await bcrypt.genSalt(10);
-  req.body.password = await bcrypt.hash(req.body.password, salt);
+  const hashedPassword = await bcrypt.hash(req.body.password, salt);
   user = new User({
     email: req.body.email,
     username: req.body.username,
-    password: req.body.password,
-    roles: req.body.roles || ['user'],
+    password: hashedPassword,
+    // Never trust client-supplied roles on public registration
+    roles: ['user'],
   });
   const result = await user.save();
   const token = user.generateToken();
