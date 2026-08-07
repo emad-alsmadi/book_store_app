@@ -47,6 +47,8 @@ export interface Order {
   itemsPrice: number;
   shippingPrice: number;
   taxPrice: number;
+  discountAmount?: number;
+  couponCode?: string;
   totalPrice: number;
   shippingMethod?: string;
   createdAt: string;

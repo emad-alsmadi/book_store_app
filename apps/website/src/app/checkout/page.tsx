@@ -156,8 +156,10 @@ export default function CheckoutPage() {
         zip: usePhysicalAddress ? values.zip : DIGITAL_SHIPPING.zip,
         notes: values.notes,
       },
-      shippingPrice: values.delivery ? 5 : 0,
-      taxPrice: 0,
+      // Server computes shipping/tax/discount — send intent flags + coupon only
+      delivery: Boolean(values.delivery),
+      shippingMethod: values.delivery ? 'standard' : 'none',
+      couponCode: appliedCoupon?.code || undefined,
     };
 
     try {

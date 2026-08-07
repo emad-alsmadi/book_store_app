@@ -279,7 +279,7 @@ export type OrderCheckoutPayload = {
   items: {
     productId: string;
     qty: number;
-    variant?: { size?: string; color?: string };
+    variant?: { size?: string; color?: string; colorCode?: string; sku?: string };
   }[];
   shippingAddress: {
     name: string;
@@ -289,8 +289,11 @@ export type OrderCheckoutPayload = {
     zip: string;
     notes?: string;
   };
-  shippingPrice?: number;
-  taxPrice?: number;
+  /** Physical shipping intent — server sets shippingPrice */
+  delivery?: boolean;
+  shippingMethod?: 'none' | 'standard' | 'express';
+  /** Server re-validates and applies discount */
+  couponCode?: string;
 };
 
 /**
@@ -629,8 +632,12 @@ export const couponsApi = {
    * @param couponId - Coupon ID
    * @returns Updated coupon
    */
+  /**
+   * Admin/ops only — customers must not increment usage; paid webhook does.
+   * Canonical path: POST /coupons/:id/use
+   */
   incrementUsage: async (couponId: string): Promise<Coupon> => {
-    const { data } = await api.post(`/coupons/${couponId}/increment`);
+    const { data } = await api.post(`/coupons/${couponId}/use`);
     return data;
   },
 };
