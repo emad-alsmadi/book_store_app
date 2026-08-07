@@ -20,12 +20,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const user = meQuery.data?.user || null;
   const loading = meQuery.isLoading;
   const hydrated = true;
+  const currentUsername =
+    user?.username || (user?.email ? user.email.split('@')[0] : '');
+  const profileHref = currentUsername
+    ? `/user/${currentUsername}`
+    : '/auth/login';
 
   return (
     <div className='min-h-screen bg-gray-50'>
       <Navbar />
       <div className='gap-6 py-6'>
-        <main className='min-w-0 px-20 pb-20 md:pb-0'>
+        <main className='min-w-0 px-4 pb-20 sm:px-6 md:pb-0 lg:px-20'>
           <AnimatePresence mode='wait'>
             <motion.div
               key={pathname}
@@ -43,12 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav className='fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white md:hidden'>
         <div className='mx-auto grid max-w-7xl grid-cols-5 items-stretch gap-1 px-1 py-2'>
-          {navItems
-            .filter(
-              (item) => item.href !== '/about' && item.href !== '/pricing',
-            )
-            .slice(0, 4)
-            .map((item) => {
+          {navItems.slice(0, 4).map((item) => {
               const active = pathname === item.href;
               const Icon = item.icon;
               return (
@@ -93,10 +93,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <DropdownMenu.Item asChild>
                   <Link
-                    href='/pricing'
+                    href='/offers'
                     className='flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition hover:bg-gray-100'
                   >
-                    Pricing
+                    Offers
                   </Link>
                 </DropdownMenu.Item>
 
@@ -109,6 +109,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 </DropdownMenu.Item>
 
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href='/faq'
+                    className='flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition hover:bg-gray-100'
+                  >
+                    Help
+                  </Link>
+                </DropdownMenu.Item>
+
                 <DropdownMenu.Separator className='my-1 h-px bg-gray-200' />
 
                 {!hydrated || !user ? (
@@ -118,18 +127,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       className='flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition hover:bg-gray-100'
                     >
                       <LogIn className='h-4 w-4 text-gray-600' />
-                      Login
+                      Sign in
                     </Link>
                   </DropdownMenu.Item>
                 ) : (
                   <>
                     <DropdownMenu.Item asChild>
                       <Link
-                        href='/profile'
+                        href={profileHref}
                         className='flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition hover:bg-gray-100'
                       >
                         <User className='h-4 w-4 text-gray-600' />
-                        Profile
+                        Account
+                      </Link>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item asChild>
+                      <Link
+                        href={`/user/${currentUsername}/orders`}
+                        className='flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 outline-none transition hover:bg-gray-100'
+                      >
+                        Orders
                       </Link>
                     </DropdownMenu.Item>
                     <DropdownMenu.Item

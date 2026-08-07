@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import {
-  BookOpen,
+  Sparkles,
   Twitter,
   Facebook,
   Instagram,
   Linkedin,
-  Mail,
 } from 'lucide-react';
 
 export function Footer() {
@@ -19,17 +18,17 @@ export function Footer() {
           <div className='lg:col-span-2'>
             <div className='flex items-center gap-2 mb-4'>
               <span className='inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500 text-white shadow-sm'>
-                <BookOpen className='h-5 w-5' />
+                <Sparkles className='h-5 w-5' />
               </span>
               <div className='leading-tight'>
                 <div className='text-xl font-extrabold tracking-tight text-white'>
-                  Craftify
+                  TrendVaulta
                 </div>
               </div>
             </div>
             <p className='text-gray-400 text-sm mb-6 max-w-sm'>
-              Premium digital templates marketplace for creators and businesses.
-              Discover thousands of professionally designed templates.
+              Beauty, fashion, and lifestyle retail — curated products, clear
+              pricing, and secure checkout.
             </p>
             <div className='flex gap-4'>
               <a
@@ -59,83 +58,83 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Our Products */}
+          {/* Shop */}
           <div>
             <h3 className='text-sm font-semibold text-white uppercase tracking-wider mb-4'>
-              Our Products
+              Shop
             </h3>
             <ul className='space-y-3'>
               <li>
                 <Link
-                  href='/templates'
+                  href='/products'
                   className='text-gray-400 hover:text-white text-sm transition-colors'
                 >
-                  Website Templates
+                  All products
                 </Link>
               </li>
               <li>
                 <Link
-                  href='/templates?category=wordpress'
+                  href='/products?category=beauty'
                   className='text-gray-400 hover:text-white text-sm transition-colors'
                 >
-                  WordPress Themes
+                  Beauty
                 </Link>
               </li>
               <li>
                 <Link
-                  href='/templates?category=ecommerce'
+                  href='/products?category=fashion'
                   className='text-gray-400 hover:text-white text-sm transition-colors'
                 >
-                  E-commerce
+                  Fashion
                 </Link>
               </li>
               <li>
                 <Link
-                  href='/templates?category=uikits'
+                  href='/products?category=lifestyle'
                   className='text-gray-400 hover:text-white text-sm transition-colors'
                 >
-                  UI Kits
+                  Lifestyle
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Marketplace */}
+          {/* Company */}
           <div>
             <h3 className='text-sm font-semibold text-white uppercase tracking-wider mb-4'>
-              Marketplace
+              Company
             </h3>
             <ul className='space-y-3'>
-              <li>
-                <Link
-                  href='/templates'
-                  className='text-gray-400 hover:text-white text-sm transition-colors'
-                >
-                  Browse Templates
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href='/creators'
-                  className='text-gray-400 hover:text-white text-sm transition-colors'
-                >
-                  Creators
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href='/pricing'
-                  className='text-gray-400 hover:text-white text-sm transition-colors'
-                >
-                  Pricing
-                </Link>
-              </li>
               <li>
                 <Link
                   href='/about'
                   className='text-gray-400 hover:text-white text-sm transition-colors'
                 >
                   About Us
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href='/brands'
+                  className='text-gray-400 hover:text-white text-sm transition-colors'
+                >
+                  Brands
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href='/offers'
+                  className='text-gray-400 hover:text-white text-sm transition-colors'
+                >
+                  Offers
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href='/cart'
+                  className='text-gray-400 hover:text-white text-sm transition-colors'
+                >
+                  Cart
                 </Link>
               </li>
             </ul>
@@ -186,7 +185,7 @@ export function Footer() {
         <div className='border-t border-gray-800 mt-12 pt-8'>
           <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
             <p className='text-gray-400 text-sm'>
-              © 2024 Craftify. All rights reserved.
+              © {new Date().getFullYear()} TrendVaulta. All rights reserved.
             </p>
             <div className='flex gap-6'>
               <Link
