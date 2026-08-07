@@ -1,148 +1,363 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  DollarSign,
+  Tag,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react';
+import { useAdminOrders } from '../hooks/useAdminOrders';
+import {
+  useAdminBrands,
+  useAdminProducts,
+} from '../hooks/useAdminCatalog';
+import { useAdminUsers } from '../hooks/useAdminUsers';
+import { errorMessage, type AdminOrder } from '../lib/api';
 
-const stats = [
-  {
-    icon: Users,
-    label: 'Total Users',
-    value: '2,543',
-    change: '+12%',
-    color: 'blue',
-  },
-  {
-    icon: Package,
-    label: 'Products',
-    value: '1,234',
-    change: '+8%',
-    color: 'green',
-  },
-  {
-    icon: ShoppingCart,
-    label: 'Orders',
-    value: '567',
-    change: '+23%',
-    color: 'purple',
-  },
-  {
-    icon: DollarSign,
-    label: 'Revenue',
-    value: '$12,345',
-    change: '+18%',
-    color: 'yellow',
-  },
-];
+function formatMoney(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+function shortId(id: string) {
+  return id.length > 8 ? `${id.slice(0, 8)}…` : id;
+}
+
+function customerLabel(order: AdminOrder) {
+  if (order.user && typeof order.user === 'object') {
+    return order.user.email || order.user.username || 'Customer';
+  }
+  return typeof order.user === 'string' ? order.user : 'Customer';
+}
+
+function isPaidLike(order: AdminOrder) {
+  return (
+    order.paymentStatus === 'paid' ||
+    ['paid', 'shipped', 'delivered'].includes(order.status)
+  );
+}
+
+const STATUS_ORDER = [
+  'pending',
+  'paid',
+  'shipped',
+  'delivered',
+  'canceled',
+] as const;
 
 export default function Dashboard() {
+  const usersQ = useAdminUsers();
+  const productsQ = useAdminProducts({ limit: 1 });
+  const brandsQ = useAdminBrands({ limit: 1 });
+  const ordersQ = useAdminOrders({ limit: 50 });
+
+  const usersCount = usersQ.data?.length ?? 0;
+  const productsTotal = productsQ.data?.meta?.total ?? productsQ.data?.data?.length ?? 0;
+  const brandsTotal = brandsQ.data?.meta?.total ?? brandsQ.data?.data?.length ?? 0;
+  const ordersTotal = ordersQ.data?.meta?.total ?? ordersQ.data?.data?.length ?? 0;
+  const recentOrders = ordersQ.data?.data ?? [];
+
+  const paidRevenue = recentOrders
+    .filter(isPaidLike)
+    .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+
+  const statusCounts = STATUS_ORDER.map((status) => ({
+    status,
+    count: recentOrders.filter((o) => o.status === status).length,
+  }));
+  const maxStatus = Math.max(1, ...statusCounts.map((s) => s.count));
+
+  const loading =
+    usersQ.isLoading ||
+    productsQ.isLoading ||
+    brandsQ.isLoading ||
+    ordersQ.isLoading;
+
+  const anyError =
+    usersQ.isError ||
+    productsQ.isError ||
+    brandsQ.isError ||
+    ordersQ.isError;
+
+  const refetchAll = () => {
+    void usersQ.refetch();
+    void productsQ.refetch();
+    void brandsQ.refetch();
+    void ordersQ.refetch();
+  };
+
+  const cards = [
+    {
+      label: 'Users',
+      value: loading && usersQ.isLoading ? '—' : String(usersCount),
+      icon: Users,
+      href: '/users',
+      hint: 'From GET /users',
+      iconWrap: 'bg-blue-100 dark:bg-blue-900',
+      iconClass: 'text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'Products',
+      value: loading && productsQ.isLoading ? '—' : String(productsTotal),
+      icon: Package,
+      href: '/products',
+      hint: 'Catalog total (incl. inactive)',
+      iconWrap: 'bg-emerald-100 dark:bg-emerald-900',
+      iconClass: 'text-emerald-600 dark:text-emerald-400',
+    },
+    {
+      label: 'Orders',
+      value: loading && ordersQ.isLoading ? '—' : String(ordersTotal),
+      icon: ShoppingCart,
+      href: '/orders',
+      hint: 'All-time order count',
+      iconWrap: 'bg-violet-100 dark:bg-violet-900',
+      iconClass: 'text-violet-600 dark:text-violet-400',
+    },
+    {
+      label: 'Paid revenue (sample)',
+      value: loading && ordersQ.isLoading ? '—' : formatMoney(paidRevenue),
+      icon: DollarSign,
+      href: '/orders',
+      hint: `Sum of paid-like orders in latest ${recentOrders.length}`,
+      iconWrap: 'bg-amber-100 dark:bg-amber-900',
+      iconClass: 'text-amber-600 dark:text-amber-400',
+    },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
     >
-      <h1 className='text-3xl font-bold text-gray-900 dark:text-white mb-8'>
-        Dashboard Overview
-      </h1>
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Live counts from admin APIs — not mock data.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={refetchAll}
+          className="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${
+              usersQ.isFetching ||
+              productsQ.isFetching ||
+              brandsQ.isFetching ||
+              ordersQ.isFetching
+                ? 'animate-spin'
+                : ''
+            }`}
+          />
+          Refresh
+        </button>
+      </div>
 
-      {/* Stats Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-        {stats.map((stat, index) => {
+      {anyError && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+          Some metrics failed to load.
+          {usersQ.isError && (
+            <span className="block">
+              Users: {errorMessage(usersQ.error, 'error')}
+            </span>
+          )}
+          {productsQ.isError && (
+            <span className="block">
+              Products: {errorMessage(productsQ.error, 'error')}
+            </span>
+          )}
+          {ordersQ.isError && (
+            <span className="block">
+              Orders: {errorMessage(ordersQ.error, 'error')}
+            </span>
+          )}
+          {brandsQ.isError && (
+            <span className="block">
+              Brands: {errorMessage(brandsQ.error, 'error')}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {cards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-              className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
+              transition={{ delay: index * 0.05 }}
             >
-              <div className='flex items-center justify-between mb-4'>
-                <div
-                  className={`p-3 rounded-lg bg-${stat.color}-100 dark:bg-${stat.color}-900`}
-                >
-                  <Icon
-                    className={`w-6 h-6 text-${stat.color}-600 dark:text-${stat.color}-400`}
-                  />
+              <Link
+                to={stat.href}
+                className="block rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-blue-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-700"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <div className={`rounded-lg p-3 ${stat.iconWrap}`}>
+                    <Icon className={`h-6 w-6 ${stat.iconClass}`} />
+                  </div>
+                  {loading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  )}
                 </div>
-                <span className='text-green-500 text-sm font-medium'>
-                  {stat.change}
-                </span>
-              </div>
-              <h3 className='text-gray-600 dark:text-gray-400 text-sm'>
-                {stat.label}
-              </h3>
-              <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stat.value}
-              </p>
+                <h3 className="text-sm text-gray-600 dark:text-gray-400">
+                  {stat.label}
+                </h3>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stat.value}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">{stat.hint}</p>
+              </Link>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Charts Section */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8'>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-        >
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
-            Revenue Overview
-          </h2>
-          <div className='h-64 flex items-center justify-center text-gray-400'>
-            Chart placeholder - Add Recharts component here
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Order status (latest 50)
+            </h2>
+            <Link
+              to="/orders"
+              className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
+              View orders
+            </Link>
           </div>
-        </motion.div>
+          {ordersQ.isLoading ? (
+            <p className="py-10 text-center text-sm text-gray-500">Loading…</p>
+          ) : recentOrders.length === 0 ? (
+            <p className="py-10 text-center text-sm text-gray-500">
+              No orders yet.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {statusCounts.map(({ status, count }) => (
+                <li key={status}>
+                  <div className="mb-1 flex justify-between text-sm">
+                    <span className="font-medium capitalize text-gray-800 dark:text-gray-200">
+                      {status}
+                    </span>
+                    <span className="text-gray-500">{count}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all"
+                      style={{ width: `${(count / maxStatus) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-        >
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
-            User Growth
-          </h2>
-          <div className='h-64 flex items-center justify-center text-gray-400'>
-            Chart placeholder - Add Recharts component here
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Catalog snapshot
+            </h2>
+            <span className="inline-flex items-center gap-1 text-sm text-gray-500">
+              <Tag className="h-4 w-4" />
+              Brands: {brandsQ.isLoading ? '—' : brandsTotal}
+            </span>
           </div>
-        </motion.div>
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/50">
+              <dt className="text-gray-600 dark:text-gray-400">Products</dt>
+              <dd className="font-semibold text-gray-900 dark:text-white">
+                <Link to="/products" className="hover:underline">
+                  {productsTotal}
+                </Link>
+              </dd>
+            </div>
+            <div className="flex justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/50">
+              <dt className="text-gray-600 dark:text-gray-400">Brands</dt>
+              <dd className="font-semibold text-gray-900 dark:text-white">
+                <Link to="/brands" className="hover:underline">
+                  {brandsTotal}
+                </Link>
+              </dd>
+            </div>
+            <div className="flex justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/50">
+              <dt className="text-gray-600 dark:text-gray-400">Users</dt>
+              <dd className="font-semibold text-gray-900 dark:text-white">
+                <Link to="/users" className="hover:underline">
+                  {usersCount}
+                </Link>
+              </dd>
+            </div>
+            <p className="pt-2 text-xs text-gray-400">
+              No dedicated analytics API yet — revenue is computed from the
+              latest orders page only.
+            </p>
+          </dl>
+        </section>
       </div>
 
-      {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-      >
-        <h2 className='text-xl font-semibold text-gray-900 dark:text-white mb-4'>
-          Recent Activity
-        </h2>
-        <div className='space-y-4'>
-          {[1, 2, 3, 4, 5].map((item) => (
-            <div
-              key={item}
-              className='flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 last:border-0'
-            >
-              <div className='flex items-center space-x-4'>
-                <div className='w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center'>
-                  <Users className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                </div>
-                <div>
-                  <p className='text-gray-900 dark:text-white font-medium'>
-                    New user registered
-                  </p>
-                  <p className='text-gray-500 dark:text-gray-400 text-sm'>
-                    2 minutes ago
-                  </p>
-                </div>
-              </div>
-              <span className='text-green-500 text-sm'>Completed</span>
-            </div>
-          ))}
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Recent orders
+          </h2>
+          <Link
+            to="/orders"
+            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Manage
+          </Link>
         </div>
-      </motion.div>
+        {ordersQ.isLoading ? (
+          <p className="py-8 text-center text-sm text-gray-500">Loading orders…</p>
+        ) : recentOrders.length === 0 ? (
+          <p className="py-8 text-center text-sm text-gray-500">No recent orders.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            {recentOrders.slice(0, 8).map((order) => (
+              <li
+                key={order._id}
+                className="flex flex-wrap items-center justify-between gap-2 py-3"
+              >
+                <div>
+                  <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                    {shortId(order._id)}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {customerLabel(order)}
+                    {order.createdAt
+                      ? ` · ${new Date(order.createdAt).toLocaleString()}`
+                      : ''}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    ${Number(order.totalPrice || 0).toFixed(2)}
+                  </p>
+                  <p className="text-xs capitalize text-gray-500">
+                    {order.status}
+                    {order.paymentStatus ? ` · ${order.paymentStatus}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </motion.div>
   );
 }
