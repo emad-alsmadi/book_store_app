@@ -1,5 +1,5 @@
 {
-  "name": "@craftify/api-client",
+  "name": "@trendvaulta/api-client",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -16,6 +16,6 @@
     "typescript": "^5"
   },
   "peerDependencies": {
-    "@craftify/types": "file:../types"
+    "@trendvaulta/types": "file:../types"
   }
 }

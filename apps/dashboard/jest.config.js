@@ -7,7 +7,7 @@ export default {
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@craftify/(.*)$': '<rootDir>/../../packages/$1/src',
+    '^@trendvaulta/(.*)$': '<rootDir>/../../packages/$1/src',
   },
   transform: {
     '^.+\\.tsx?$': [

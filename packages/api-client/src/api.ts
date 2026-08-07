@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import Cookies from 'js-cookie';
-import type { ApiResponse } from '@craftify/types';
+import type { ApiResponse } from '@trendvaulta/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 

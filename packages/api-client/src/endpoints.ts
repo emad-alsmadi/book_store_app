@@ -5,7 +5,7 @@ import type {
   Order,
   AuthResponse,
   PaginatedResponse,
-} from '@craftify/types';
+} from '@trendvaulta/types';
 
 export const authApi = {
   login: (email: string, password: string) =>
