@@ -223,6 +223,43 @@ async function incrementCouponUsedCount(couponId) {
   );
 }
 
+/**
+ * Restore inventory after a paid order is canceled.
+ * Idempotency is enforced by the caller via order.stockRestored.
+ */
+async function restoreStockForCanceledOrder(Product, order) {
+  for (const it of order.items || []) {
+    const productId = it.productId;
+    const qty = Number(it.qty);
+    if (!productId || !(qty > 0)) continue;
+
+    const product = await Product.findById(productId);
+    if (!product) continue;
+
+    const hasVariants =
+      Array.isArray(product.variants) && product.variants.length > 0;
+
+    if (hasVariants && it.variant) {
+      const matched = matchVariant(product, it.variant);
+      if (matched) {
+        matched.stock = Number(matched.stock || 0) + qty;
+        product.stock = product.variants.reduce(
+          (s, v) => s + Number(v.stock || 0),
+          0,
+        );
+      } else {
+        // Variant no longer matches — restore against product-level stock
+        product.stock = Number(product.stock || 0) + qty;
+      }
+      await product.save();
+    } else {
+      await Product.findByIdAndUpdate(productId, {
+        $inc: { stock: qty },
+      });
+    }
+  }
+}
+
 module.exports = {
   matchVariant,
   resolveUnitPrice,
@@ -232,6 +269,7 @@ module.exports = {
   loadValidCouponByCode,
   buildNormalizedOrderLines,
   decrementStockForPaidOrder,
+  restoreStockForCanceledOrder,
   incrementCouponUsedCount,
   FLAT_SHIPPING_USD,
 };

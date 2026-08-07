@@ -8,6 +8,7 @@ const {
   resolveShippingPrice,
   loadValidCouponByCode,
   calculateCouponDiscount,
+  restoreStockForCanceledOrder,
 } = require('../utils/commerce');
 const {
   ORDER_STATUSES,
@@ -219,13 +220,24 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: transition.message });
   }
 
-  // Cancel unpaid pending only; canceling paid/shipped does not restock in V1
+  // Guard: pending+paid is an inconsistent state — do not cancel via this path
   if (value.status === 'canceled' && order.status === 'pending') {
     if (order.paymentStatus === 'paid') {
       return res.status(400).json({
         message: 'Cannot cancel a paid order from pending state',
       });
     }
+  }
+
+  let stockRestoredNow = false;
+  if (
+    value.status === 'canceled' &&
+    order.stockDecremented &&
+    !order.stockRestored
+  ) {
+    await restoreStockForCanceledOrder(Product, order);
+    order.stockRestored = true;
+    stockRestoredNow = true;
   }
 
   order.status = value.status;
@@ -235,7 +247,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   res.status(200).json({
     ...serialized,
     allowedNextStatuses: getAllowedNextStatuses(serialized.status),
-    message: `Order status updated to ${value.status}`,
+    stockRestored: stockRestoredNow || Boolean(order.stockRestored),
+    message: stockRestoredNow
+      ? `Order canceled and inventory restored`
+      : `Order status updated to ${value.status}`,
   });
 });
 

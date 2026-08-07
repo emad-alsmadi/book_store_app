@@ -174,7 +174,7 @@ Private + `brands:write` / `brands:delete`.
 | Access | private + `orders:write` |
 | Body | `{ status }` — one of pending/paid/shipped/delivered/canceled |
 | Rules | Allowed: `pending→canceled`, `paid→shipped|canceled`, `shipped→delivered`. **Not** `pending→paid` (Stripe only). |
-| Note | Canceling paid orders does not restock inventory in V1 |
+| Note | Canceling a paid order that previously decremented stock restores inventory once (`stockRestored` flag). Stripe refunds are separate / not automatic. |
 
 ---
 

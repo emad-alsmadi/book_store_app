@@ -174,7 +174,8 @@ Rules below describe **current implemented behavior** where known, then **recomm
 **Recommended V1 transitions (admin only after paid):**  
 `pending → canceled` (if unpaid)  
 `paid → shipped → delivered`  
-`paid → canceled` only with inventory restock policy defined  
+`paid → canceled` restores inventory when `stockDecremented` and not yet `stockRestored` (`code`)  
+
 
 **Invalid transitions:** skip states; customer cannot self-mark paid/shipped.
 
