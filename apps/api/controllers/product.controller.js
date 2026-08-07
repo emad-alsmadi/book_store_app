@@ -3,6 +3,7 @@ const {
   Product,
   validateCreateProduct,
   validateUpdateProduct,
+  resolveProductBadges,
 } = require('../models/Product');
 
 /**
@@ -15,10 +16,13 @@ const {
  * - subcategory: product subcategory
  * - brand: brand id
  * - page/limit: pagination
- * - sort: comma-separated fields, prefix with '-' for desc
- * - featured: show only featured products
+ * - sort: comma-separated fields, prefix with '-' for desc;
+ *   use `bestselling` for salesCount desc (then reviewCount, createdAt)
+ * - featured: show only featured products (`true`)
  * - includeInactive: admin/moderator only — include inactive products
  * - isActive: admin/moderator only — filter by active flag (true|false)
+ *
+ * Product payloads include `badges`: curated + computed (`lowStock`, `new`).
  *
  * @route GET /api/products
  * @access Public (staff filters require Bearer token)
@@ -85,11 +89,22 @@ const getAllProducts = asyncHandler(async (req, res) => {
   }
 
   const sortObj = {};
-  sort.split(',').forEach((field) => {
-    const direction = field.startsWith('-') ? -1 : 1;
-    const fieldName = field.replace(/^-/, '');
-    sortObj[fieldName] = direction;
-  });
+  const sortFields = String(sort).split(',').map((f) => f.trim()).filter(Boolean);
+  if (sortFields.length === 1 && sortFields[0] === 'bestselling') {
+    sortObj.salesCount = -1;
+    sortObj.reviewCount = -1;
+    sortObj.createdAt = -1;
+  } else {
+    sortFields.forEach((field) => {
+      const direction = field.startsWith('-') ? -1 : 1;
+      const fieldName = field.replace(/^-/, '');
+      if (fieldName === 'bestselling') {
+        sortObj.salesCount = -1;
+        return;
+      }
+      sortObj[fieldName] = direction;
+    });
+  }
 
   const pageNum = Math.max(1, parseInt(page, 10));
   const limitNum = Math.max(1, parseInt(limit, 10));
@@ -106,9 +121,13 @@ const getAllProducts = asyncHandler(async (req, res) => {
   ]);
 
   const pages = Math.ceil(total / limitNum);
+  const data = products.map((product) => ({
+    ...product,
+    badges: resolveProductBadges(product),
+  }));
 
   res.status(200).json({
-    data: products,
+    data,
     meta: {
       total,
       page: pageNum,
@@ -147,7 +166,9 @@ const getProductById = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Product not found' });
   }
 
-  res.status(200).json(product);
+  const payload = product.toObject();
+  payload.badges = resolveProductBadges(payload);
+  res.status(200).json(payload);
 });
 
 /**
@@ -183,6 +204,8 @@ const createProduct = asyncHandler(async (req, res) => {
     sku: req.body.sku,
     isActive: req.body.isActive !== undefined ? req.body.isActive : true,
     featured: req.body.featured || false,
+    salesCount: req.body.salesCount || 0,
+    badges: req.body.badges || [],
   });
 
   const result = await product.save();
@@ -209,7 +232,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     'title', 'brand', 'description', 'price', 'cover', 'images',
     'category', 'subcategory', 'variants', 'material', 'weight',
     'dimensions', 'shippingInfo', 'stock', 'sku', 'averageRating',
-    'reviewCount', 'isActive', 'featured'
+    'reviewCount', 'isActive', 'featured', 'salesCount', 'badges',
   ];
   
   allowedFields.forEach((field) => {

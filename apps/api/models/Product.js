@@ -1,6 +1,37 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 
+const MERCHANDISING_BADGES = ['bestseller', 'new', 'lowStock'];
+const LOW_STOCK_THRESHOLD = 5;
+const NEW_PRODUCT_DAYS = 30;
+
+/**
+ * Merge curated badges with computed merchandising signals.
+ * @param {object} product - lean product or plain object
+ * @returns {Array<'bestseller'|'new'|'lowStock'>}
+ */
+const resolveProductBadges = (product) => {
+  const badges = new Set(
+    Array.isArray(product?.badges)
+      ? product.badges.filter((b) => MERCHANDISING_BADGES.includes(b))
+      : [],
+  );
+
+  const stock = Number(product?.stock) || 0;
+  if (stock > 0 && stock <= LOW_STOCK_THRESHOLD) {
+    badges.add('lowStock');
+  }
+
+  if (product?.createdAt) {
+    const ageMs = Date.now() - new Date(product.createdAt).getTime();
+    if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000) {
+      badges.add('new');
+    }
+  }
+
+  return Array.from(badges);
+};
+
 const ProductSchema = new mongoose.Schema(
   {
     title: {
@@ -159,6 +190,17 @@ const ProductSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /** Units sold — used for sort=bestselling */
+    salesCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    /** Curated merchandising badges; lowStock/new may also be computed at read time */
+    badges: [{
+      type: String,
+      enum: MERCHANDISING_BADGES,
+    }],
   },
   {
     timestamps: true,
@@ -206,6 +248,8 @@ const validateCreateProduct = (obj) => {
     sku: Joi.string().trim(),
     isActive: Joi.boolean().default(true),
     featured: Joi.boolean().default(false),
+    salesCount: Joi.number().min(0).default(0),
+    badges: Joi.array().items(Joi.string().valid(...MERCHANDISING_BADGES)),
   });
   const { error } = schema.validate(obj);
   return error;
@@ -251,9 +295,18 @@ const validateUpdateProduct = (obj) => {
     reviewCount: Joi.number().min(0),
     isActive: Joi.boolean(),
     featured: Joi.boolean(),
+    salesCount: Joi.number().min(0),
+    badges: Joi.array().items(Joi.string().valid(...MERCHANDISING_BADGES)),
   });
   const { error } = schema.validate(obj);
   return error;
 };
 
-module.exports = { Product, validateCreateProduct, validateUpdateProduct };
+module.exports = {
+  Product,
+  validateCreateProduct,
+  validateUpdateProduct,
+  resolveProductBadges,
+  MERCHANDISING_BADGES,
+  LOW_STOCK_THRESHOLD,
+};
