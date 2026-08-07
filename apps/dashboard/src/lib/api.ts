@@ -106,3 +106,118 @@ export const adminOrdersApi = {
     return data;
   },
 };
+
+export type AdminBrand = {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  country?: string;
+};
+
+export type BrandFormPayload = {
+  name: string;
+  slug: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  country?: string;
+};
+
+export type AdminProduct = {
+  _id: string;
+  title: string;
+  description?: string;
+  price: number;
+  cover?: string;
+  category?: string;
+  subcategory?: string;
+  stock?: number;
+  sku?: string;
+  averageRating?: number;
+  isActive?: boolean;
+  brand?: string | { _id?: string; name?: string; slug?: string };
+};
+
+export type ProductFormPayload = {
+  title: string;
+  brand: string;
+  description: string;
+  price: number;
+  cover: string;
+  category: string;
+  subcategory: string;
+  stock: number;
+  sku: string;
+};
+
+export type PaginatedList<T> = {
+  data: T[];
+  meta?: { total: number; page: number; pages: number; limit: number };
+};
+
+export const adminBrandsApi = {
+  getBrands: async (
+    params: { page?: number; limit?: number; q?: string } = {},
+  ): Promise<PaginatedList<AdminBrand>> => {
+    const { data } = await api.get<PaginatedList<AdminBrand>>('/brands', {
+      params: { limit: 100, ...params },
+    });
+    return data;
+  },
+
+  createBrand: async (payload: BrandFormPayload): Promise<AdminBrand> => {
+    const { data } = await api.post<AdminBrand>('/brands', payload);
+    return data;
+  },
+
+  updateBrand: async (
+    id: string,
+    payload: Partial<BrandFormPayload>,
+  ): Promise<AdminBrand> => {
+    const { data } = await api.put<AdminBrand>(`/brands/${id}`, payload);
+    return data;
+  },
+
+  deleteBrand: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/brands/${id}`);
+    return data;
+  },
+};
+
+export const adminProductsApi = {
+  getProducts: async (
+    params: {
+      page?: number;
+      limit?: number;
+      q?: string;
+      category?: string;
+      includeInactive?: boolean;
+    } = {},
+  ): Promise<PaginatedList<AdminProduct>> => {
+    const { data } = await api.get<PaginatedList<AdminProduct>>('/products', {
+      params: { limit: 100, includeInactive: true, ...params },
+    });
+    return data;
+  },
+
+  createProduct: async (payload: ProductFormPayload): Promise<AdminProduct> => {
+    const { data } = await api.post<AdminProduct>('/products', payload);
+    return data;
+  },
+
+  updateProduct: async (
+    id: string,
+    payload: Partial<ProductFormPayload>,
+  ): Promise<AdminProduct> => {
+    const { data } = await api.put<AdminProduct>(`/products/${id}`, payload);
+    return data;
+  },
+
+  deleteProduct: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/products/${id}`);
+    return data;
+  },
+};
