@@ -2,12 +2,11 @@
  * DEMO / MOCK storefront merchandising data.
  * Easy to replace with API hooks later (see docs/STOREFRONT_BACKEND_BACKLOG.md).
  *
- * TODO(api): GET /api/storefront/home (includes hero slides)
+ * TODO(api): GET /api/storefront/home
  * TODO(api): GET /api/offers
  * TODO(api): GET /api/brands?featured=true
  * TODO(api): GET /api/storefront/lookbooks
  * TODO(api): GET /api/products/:id/bundles
- * TODO(api): GET /api/storefront/gift-finder
  */
 
 export type DemoBadge = 'bestseller' | 'lowStock' | 'new';
@@ -42,7 +41,15 @@ export type DemoCategoryShortcut = {
   countLabel: string;
   href: string;
   accent: string;
-  icon: 'sparkles' | 'shirt' | 'heart' | 'watch' | 'home' | 'gift' | 'sun' | 'bag';
+  icon:
+    | 'sparkles'
+    | 'shirt'
+    | 'heart'
+    | 'watch'
+    | 'home'
+    | 'gift'
+    | 'sun'
+    | 'bag';
 };
 
 export type DemoLookbookStory = {
@@ -72,60 +79,6 @@ export type DemoGiftFinderConfig = {
   recipients: DemoGiftOption[];
   budgets: DemoGiftOption[];
 };
-
-export type DemoHeroSlide = {
-  id: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  ctaLabel: string;
-  ctaHref: string;
-  secondaryCtaLabel?: string;
-  secondaryCtaHref?: string;
-  /** Local placeholder assets only — not scraped from third parties */
-  imageUrl: string;
-  tone: 'rose' | 'stone' | 'teal';
-};
-
-/** DEMO — homepage hero carousel slides */
-export const DEMO_HERO_SLIDES: DemoHeroSlide[] = [
-  {
-    id: 'hero-glow',
-    eyebrow: 'Beauty edit',
-    title: 'Glow essentials for every day',
-    body: 'Clean textures and soft finishes — curated for TrendVaulta shoppers.',
-    ctaLabel: 'Shop beauty',
-    ctaHref: '/products?category=beauty',
-    secondaryCtaLabel: 'Shop all',
-    secondaryCtaHref: '/products',
-    imageUrl: '/images/1.webp',
-    tone: 'rose',
-  },
-  {
-    id: 'hero-wardrobe',
-    eyebrow: 'Fashion edit',
-    title: 'Wardrobe pieces that move with you',
-    body: 'Modern staples with quiet polish — ready for workdays and weekends.',
-    ctaLabel: 'Shop fashion',
-    ctaHref: '/products?category=fashion',
-    secondaryCtaLabel: 'New arrivals',
-    secondaryCtaHref: '/products?sort=-createdAt',
-    imageUrl: '/images/2.webp',
-    tone: 'stone',
-  },
-  {
-    id: 'hero-home',
-    eyebrow: 'Lifestyle edit',
-    title: 'Home accents with calm character',
-    body: 'Small upgrades that make everyday spaces feel intentional.',
-    ctaLabel: 'Shop lifestyle',
-    ctaHref: '/products?category=lifestyle',
-    secondaryCtaLabel: 'View offers',
-    secondaryCtaHref: '/offers',
-    imageUrl: '/images/3.webp',
-    tone: 'teal',
-  },
-];
 
 /** DEMO — trust / service strip */
 export const DEMO_TRUST_ITEMS: DemoTrustItem[] = [

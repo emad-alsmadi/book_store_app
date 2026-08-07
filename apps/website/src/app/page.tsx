@@ -32,7 +32,8 @@ export default function HomePage() {
   const products = productsQuery.data?.data ?? [];
   const featuredProducts = products.slice(0, 8);
   const loading = productsQuery.isLoading;
-  const error = (productsQuery.error as { message?: string } | null)?.message || null;
+  const error =
+    (productsQuery.error as { message?: string } | null)?.message || null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
