@@ -7,6 +7,7 @@ import Users from './pages/Users';
 import Products from './pages/Products';
 import Brands from './pages/Brands';
 import Orders from './pages/Orders';
+import Coupons from './pages/Coupons';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 
@@ -52,6 +53,10 @@ function App() {
               <Route
                 path='orders'
                 element={<Orders />}
+              />
+              <Route
+                path='coupons'
+                element={<Coupons />}
               />
               <Route
                 path='settings'

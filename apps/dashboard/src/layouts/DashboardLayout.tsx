@@ -6,6 +6,7 @@ import {
   Package,
   Tag,
   ShoppingCart,
+  TicketPercent,
   Settings,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ const sidebarItems = [
   { icon: Package, label: 'Products', path: '/products' },
   { icon: Tag, label: 'Brands', path: '/brands' },
   { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+  { icon: TicketPercent, label: 'Coupons', path: '/coupons' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

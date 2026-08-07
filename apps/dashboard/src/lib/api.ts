@@ -299,3 +299,59 @@ export const adminUsersApi = {
     return data;
   },
 };
+
+export type DiscountType = 'percentage' | 'fixed';
+
+export type AdminCoupon = {
+  _id: string;
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  expirationDate: string;
+  usageLimit: number | null;
+  usedCount: number;
+  minimumOrderAmount: number;
+  isActive: boolean;
+  description: string | null;
+  createdAt?: string;
+};
+
+export type CouponPayload = {
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  expirationDate: string;
+  usageLimit?: number | null;
+  minimumOrderAmount?: number;
+  isActive?: boolean;
+  description?: string;
+};
+
+export const adminCouponsApi = {
+  getCoupons: async (
+    params: { page?: number; limit?: number } = {},
+  ): Promise<PaginatedList<AdminCoupon>> => {
+    const { data } = await api.get<PaginatedList<AdminCoupon>>('/coupons', {
+      params: { limit: 100, ...params },
+    });
+    return data;
+  },
+
+  createCoupon: async (payload: CouponPayload): Promise<AdminCoupon> => {
+    const { data } = await api.post<AdminCoupon>('/coupons', payload);
+    return data;
+  },
+
+  updateCoupon: async (
+    id: string,
+    payload: Partial<CouponPayload>,
+  ): Promise<AdminCoupon> => {
+    const { data } = await api.put<AdminCoupon>(`/coupons/${id}`, payload);
+    return data;
+  },
+
+  deleteCoupon: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/coupons/${id}`);
+    return data;
+  },
+};
