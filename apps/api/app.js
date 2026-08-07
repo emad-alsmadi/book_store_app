@@ -69,7 +69,7 @@ app.get('/api/', (_req, res) => {
   });
 });
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/trendvaulta', (_req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'trendvaulta-api',

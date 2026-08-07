@@ -26,15 +26,26 @@ function serializeOrder(order) {
 
   const items = (plain.items || []).map((it) => serializeOrderItem(it));
 
+  let user = plain.user;
+  if (plain.user && typeof plain.user === 'object' && plain.user._id) {
+    // Keep populated customer fields for admin lists; otherwise expose id string
+    if (plain.user.email || plain.user.username) {
+      user = {
+        _id: String(plain.user._id),
+        username: plain.user.username,
+        email: plain.user.email,
+      };
+    } else {
+      user = String(plain.user._id);
+    }
+  } else if (plain.user != null) {
+    user = String(plain.user);
+  }
+
   return {
     ...plain,
     _id: plain._id != null ? String(plain._id) : plain._id,
-    user:
-      plain.user && typeof plain.user === 'object' && plain.user._id
-        ? String(plain.user._id)
-        : plain.user != null
-          ? String(plain.user)
-          : plain.user,
+    user,
     items,
     discountAmount: plain.discountAmount ?? 0,
     couponCode: plain.couponCode ?? '',
