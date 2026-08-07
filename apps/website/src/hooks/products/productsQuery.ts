@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api';
 import type { ProductsQuery, ProductsResponse, Product } from '@/types';
 
@@ -18,6 +18,7 @@ export function useProducts(query: ProductsQuery) {
     },
     staleTime: 30_000,
     retry: 1,
+    placeholderData: keepPreviousData,
   });
 }
 

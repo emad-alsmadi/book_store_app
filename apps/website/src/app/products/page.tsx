@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Search, ArrowUpDown } from 'lucide-react';
+import { Filter, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/products/ProductCard';
 import { useProducts } from '@/hooks/products/productsQuery';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { Pagination } from '@/components/ui/Pagination';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { getDemoBadgesForIndex } from '@/data/demoStorefront';
 
 const sortOptions = [
   { value: 'createdAt', label: 'Featured' },
@@ -19,192 +20,477 @@ const sortOptions = [
   { value: '-createdAt', label: 'Newest Arrivals' },
 ];
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 export default function ProductsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const category = searchParams.get('category') || undefined;
   const subcategory = searchParams.get('subcategory') || undefined;
+  const qParam = searchParams.get('q') || '';
+  const sortBy = searchParams.get('sort') || 'createdAt';
+  const minPrice = searchParams.get('minPrice') || undefined;
+  const maxPrice = searchParams.get('maxPrice') || undefined;
+  const minRatingParam = searchParams.get('minRating');
+  const minRating = minRatingParam ? Number(minRatingParam) : null;
+  const pageParam = Number(searchParams.get('page') || '1');
+  const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+  const sizeParam = searchParams.get('size');
+  const colorParam = searchParams.get('color');
+  const selectedSizes = sizeParam ? sizeParam.split(',').filter(Boolean) : [];
+  const selectedColors = colorParam ? colorParam.split(',').filter(Boolean) : [];
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [searchInput, setSearchInput] = useState(qParam);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
   const limit = 12;
 
-  // Reset page when category or sort changes
   useEffect(() => {
-    setCurrentPage(1);
-  }, [category, subcategory, sortBy]);
+    setSearchInput(qParam);
+  }, [qParam]);
+
+  const replaceParams = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  // Sync debounced search → URL `q`
+  useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === qParam) return;
+    replaceParams((params) => {
+      if (next) params.set('q', next);
+      else params.delete('q');
+      params.delete('page');
+    });
+  }, [debouncedSearch, qParam, replaceParams]);
+
+  const query = useMemo(
+    () => ({
+      page: currentPage,
+      limit,
+      sort: sortBy,
+      category,
+      subcategory,
+      q: qParam || undefined,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    }),
+    [
+      currentPage,
+      limit,
+      sortBy,
+      category,
+      subcategory,
+      qParam,
+      minPrice,
+      maxPrice,
+    ],
+  );
 
   const {
     data: response,
     isLoading,
+    isFetching,
     error,
-  } = useProducts({
-    page: currentPage,
-    limit,
-    sort: sortBy,
-    category,
-    subcategory,
-  });
+  } = useProducts(query);
+
   const products = response?.data || [];
   const meta = response?.meta || { total: 0, page: 1, pages: 1, limit };
 
-  const filteredProducts = products.filter(
-    (product: any) =>
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  /**
+   * DEMO client facets for rating / size / color (not backend-backed).
+   * Price + search + category already go through the API.
+   * TODO(api): server-side facet counts + variant filters
+   */
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      if (minRating != null && !Number.isNaN(minRating)) {
+        if ((product.averageRating || 0) < minRating) return false;
+      }
+      if (selectedSizes.length > 0) {
+        const sizes = (product.variants || [])
+          .map((v) => v.size)
+          .filter(Boolean) as string[];
+        if (sizes.length > 0 && !selectedSizes.some((s) => sizes.includes(s))) {
+          return false;
+        }
+      }
+      if (selectedColors.length > 0) {
+        const colors = (product.variants || [])
+          .map((v) => v.color)
+          .filter(Boolean) as string[];
+        if (
+          colors.length > 0 &&
+          !selectedColors.some((c) => colors.includes(c))
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [products, minRating, selectedSizes, selectedColors]);
+
+  const activeChips = useMemo(() => {
+    const chips: { key: string; label: string; clear: () => void }[] = [];
+    if (qParam) {
+      chips.push({
+        key: 'q',
+        label: `Search: “${qParam}”`,
+        clear: () =>
+          replaceParams((p) => {
+            p.delete('q');
+            p.delete('page');
+          }),
+      });
+    }
+    if (category) {
+      chips.push({
+        key: 'category',
+        label: subcategory
+          ? `${category} / ${subcategory}`
+          : `Category: ${category}`,
+        clear: () =>
+          replaceParams((p) => {
+            p.delete('category');
+            p.delete('subcategory');
+            p.delete('page');
+          }),
+      });
+    }
+    if (minPrice || maxPrice) {
+      chips.push({
+        key: 'price',
+        label: `Price: $${minPrice || '0'}–$${maxPrice || '∞'}`,
+        clear: () =>
+          replaceParams((p) => {
+            p.delete('minPrice');
+            p.delete('maxPrice');
+            p.delete('page');
+          }),
+      });
+    }
+    if (minRating != null && !Number.isNaN(minRating)) {
+      chips.push({
+        key: 'rating',
+        label: `${minRating}★ & up (demo)`,
+        clear: () =>
+          replaceParams((p) => {
+            p.delete('minRating');
+            p.delete('page');
+          }),
+      });
+    }
+    selectedSizes.forEach((size) => {
+      chips.push({
+        key: `size-${size}`,
+        label: `Size: ${size} (demo)`,
+        clear: () =>
+          replaceParams((p) => {
+            const next = selectedSizes.filter((s) => s !== size);
+            if (next.length) p.set('size', next.join(','));
+            else p.delete('size');
+            p.delete('page');
+          }),
+      });
+    });
+    selectedColors.forEach((color) => {
+      chips.push({
+        key: `color-${color}`,
+        label: `Color: ${color} (demo)`,
+        clear: () =>
+          replaceParams((p) => {
+            const next = selectedColors.filter((c) => c !== color);
+            if (next.length) p.set('color', next.join(','));
+            else p.delete('color');
+            p.delete('page');
+          }),
+      });
+    });
+    return chips;
+  }, [
+    qParam,
+    category,
+    subcategory,
+    minPrice,
+    maxPrice,
+    minRating,
+    selectedSizes,
+    selectedColors,
+    replaceParams,
+  ]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    replaceParams((params) => {
+      if (page <= 1) params.delete('page');
+      else params.set('page', String(page));
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (isLoading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-fuchsia-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Loading products...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleSortChange = (value: string) => {
+    replaceParams((params) => {
+      if (value === 'createdAt') params.delete('sort');
+      else params.set('sort', value);
+      params.delete('page');
+    });
+  };
 
-  if (error) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center text-red-600'>
-          <p>Failed to load products</p>
-        </div>
-      </div>
-    );
-  }
+  const rangeStart =
+    meta.total === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const rangeEnd = Math.min(currentPage * limit, meta.total);
+
+  const headingCategory = subcategory || category;
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+    <div className='min-h-screen bg-stone-50'>
+      <div className='mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8'>
         <div className='flex gap-8'>
-          {/* Sidebar */}
           <div className='hidden lg:block'>
             <CategorySidebar />
           </div>
 
-          {/* Main Content */}
-          <div className='flex-1'>
-            {/* Header */}
+          {/* Mobile filter drawer */}
+          {filtersOpen && (
+            <div
+              className='fixed inset-0 z-50 lg:hidden'
+              role='dialog'
+              aria-modal='true'
+              aria-label='Filters'
+            >
+              <button
+                type='button'
+                className='absolute inset-0 bg-stone-900/40'
+                aria-label='Close filters'
+                onClick={() => setFiltersOpen(false)}
+              />
+              <div className='absolute inset-y-0 left-0 flex w-[min(100%,20rem)] flex-col bg-white shadow-xl'>
+                <div className='flex items-center justify-between border-b border-stone-200 px-4 py-3'>
+                  <p className='font-semibold text-stone-900'>Filters</p>
+                  <button
+                    type='button'
+                    onClick={() => setFiltersOpen(false)}
+                    className='rounded-lg p-2 text-stone-600 hover:bg-stone-100'
+                    aria-label='Close'
+                  >
+                    <X className='h-5 w-5' />
+                  </button>
+                </div>
+                <div className='flex-1 overflow-y-auto p-3'>
+                  <CategorySidebar onAfterNavigate={() => setFiltersOpen(false)} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className='min-w-0 flex-1'>
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               className='mb-6'
             >
-              <h1 className='text-3xl font-extrabold text-gray-900 mb-2'>
-                Products
+              <h1 className='text-3xl font-extrabold capitalize text-stone-900'>
+                {headingCategory ? headingCategory.replace(/-/g, ' ') : 'Products'}
               </h1>
-              <p className='text-gray-600'>
-                Discover amazing products for your lifestyle
+              <p className='mt-1 text-stone-600'>
+                Beauty, fashion & lifestyle — find your next essential.
               </p>
             </motion.div>
 
-            {/* Search, Filter and Sort */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className='mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between'
-            >
-              <div className='relative flex-1 max-w-xl w-full'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5' />
+            <div className='mb-4 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center'>
+              <form
+                role='search'
+                className='relative w-full max-w-xl'
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  replaceParams((params) => {
+                    const next = searchInput.trim();
+                    if (next) params.set('q', next);
+                    else params.delete('q');
+                    params.delete('page');
+                  });
+                }}
+              >
+                <label htmlFor='plp-search' className='sr-only'>
+                  Search products
+                </label>
+                <Search className='pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400' />
                 <Input
-                  type='text'
-                  placeholder='Search products...'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  id='plp-search'
+                  type='search'
+                  placeholder='Search products…'
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className='pl-10'
                 />
-              </div>
+              </form>
 
-              <div className='flex gap-3 w-full sm:w-auto'>
+              <div className='flex w-full gap-3 sm:w-auto'>
+                <label className='sr-only' htmlFor='plp-sort'>
+                  Sort products
+                </label>
                 <select
+                  id='plp-sort'
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className='px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent flex items-center gap-2'
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className='flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-fuchsia-500 sm:flex-none'
                 >
                   {sortOptions.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
 
                 <Button
+                  type='button'
                   variant='outline'
                   className='gap-2 lg:hidden'
+                  onClick={() => setFiltersOpen(true)}
                 >
                   <Filter className='h-4 w-4' />
                   Filters
+                  {activeChips.length > 0 ? (
+                    <span className='rounded-full bg-fuchsia-100 px-1.5 text-xs font-semibold text-fuchsia-800'>
+                      {activeChips.length}
+                    </span>
+                  ) : null}
                 </Button>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Results Count */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className='mb-6 text-sm text-gray-600'
-            >
-              Showing {filteredProducts.length} of {meta.total} results
-            </motion.div>
+            {activeChips.length > 0 && (
+              <ul className='mb-4 flex flex-wrap gap-2'>
+                {activeChips.map((chip) => (
+                  <li key={chip.key}>
+                    <button
+                      type='button'
+                      onClick={chip.clear}
+                      className='inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:border-stone-300'
+                    >
+                      {chip.label}
+                      <X className='h-3 w-3' aria-hidden />
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type='button'
+                    onClick={() => router.replace('/products')}
+                    className='text-xs font-semibold text-fuchsia-700 hover:text-fuchsia-800'
+                  >
+                    Clear all
+                  </button>
+                </li>
+              </ul>
+            )}
 
-            {/* Products Grid */}
-            {filteredProducts && filteredProducts.length > 0 ? (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            <div className='mb-6 flex flex-wrap items-center gap-2 text-sm text-stone-600'>
+              {isLoading && !response ? (
+                <span>Loading products…</span>
+              ) : error ? (
+                <span className='text-rose-600'>Failed to load products</span>
+              ) : (
+                <span>
+                  {meta.total === 0
+                    ? 'No results'
+                    : `${rangeStart}–${rangeEnd} of ${meta.total} results`}
+                  {qParam ? (
+                    <>
+                      {' '}
+                      for <span className='font-semibold text-fuchsia-700'>“{qParam}”</span>
+                    </>
+                  ) : null}
+                </span>
+              )}
+              {isFetching && response ? (
+                <span className='text-xs text-stone-400'>Updating…</span>
+              ) : null}
+              {(minRating != null ||
+                selectedSizes.length > 0 ||
+                selectedColors.length > 0) && (
+                <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800'>
+                  Demo facets applied on this page
+                </span>
+              )}
+            </div>
+
+            {isLoading && !response ? (
+              <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className='aspect-[3/4] animate-pulse rounded-xl bg-stone-200/70'
+                  />
+                ))}
+              </div>
+            ) : error && !response ? (
+              <div className='rounded-xl border border-rose-100 bg-white py-12 text-center'>
+                <p className='text-rose-600'>Couldn’t load the catalog.</p>
+                <Button
+                  type='button'
+                  className='mt-4'
+                  onClick={() => router.refresh()}
                 >
-                  {filteredProducts.map((product: any) => (
+                  Retry
+                </Button>
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <>
+                <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+                  {filteredProducts.map((product, index) => (
                     <ProductCard
                       key={product._id}
                       product={product}
+                      badges={getDemoBadgesForIndex(
+                        (currentPage - 1) * limit + index,
+                      )}
                     />
                   ))}
-                </motion.div>
+                </div>
 
-                {/* Pagination */}
                 {meta.pages > 1 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className='mt-8'
-                  >
+                  <div className='mt-8'>
                     <Pagination
                       currentPage={currentPage}
                       totalPages={meta.pages}
                       onPageChange={handlePageChange}
                     />
-                  </motion.div>
+                  </div>
                 )}
               </>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className='text-center py-12 bg-white rounded-xl border border-gray-100'
-              >
-                <p className='text-gray-500 text-lg'>
-                  {searchQuery
-                    ? 'No products found matching your search.'
+              <div className='rounded-xl border border-stone-100 bg-white py-12 text-center'>
+                <p className='text-lg text-stone-500'>
+                  {qParam || activeChips.length
+                    ? 'No products match these filters.'
                     : 'No products available.'}
                 </p>
-              </motion.div>
+                {activeChips.length > 0 && (
+                  <Button
+                    type='button'
+                    variant='outline'
+                    className='mt-4'
+                    onClick={() => router.replace('/products')}
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
