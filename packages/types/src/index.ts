@@ -1,67 +1,160 @@
-// Shared TypeScript types and interfaces
-// Types will be extracted from the website and shared across apps
+// Shared TrendVaulta domain types (canonical product commerce)
+
+export type AppRole = 'user' | 'admin' | 'moderator';
 
 export interface User {
   _id: string;
+  id?: string;
   email: string;
   username: string;
-  role: 'user' | 'admin' | 'moderator';
-  createdAt: string;
-  updatedAt: string;
+  roles: AppRole[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Template {
+export interface ProductVariant {
+  size?: string;
+  color?: string;
+  colorCode?: string;
+  sku?: string;
+  stock?: number;
+  price?: number;
+}
+
+export interface Brand {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  country?: string;
+  isActive?: boolean;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Product {
   _id: string;
   title: string;
+  brand: Brand | string;
   description: string;
   price: number;
-  creator: Creator;
+  basePrice?: number;
+  cover: string;
+  images?: string[];
   category: string;
-  tags: string[];
-  thumbnail: string;
-  previewImages: string[];
-  downloads: number;
-  rating: number;
-  createdAt: string;
-  updatedAt: string;
+  subcategory?: string;
+  variants?: ProductVariant[];
+  stock: number;
+  sku?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  isActive?: boolean;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+export interface OrderItem {
+  productId: string;
+  title: string;
+  price: number;
+  qty: number;
+  cover: string;
+  variant?: ProductVariant;
+}
+
+export type OrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'shipped'
+  | 'delivered'
+  | 'canceled';
+
+export type PaymentStatus =
+  | 'unpaid'
+  | 'pending'
+  | 'paid'
+  | 'failed'
+  | 'refunded';
+
+export interface Order {
+  _id: string;
+  user: string | User;
+  items: OrderItem[];
+  status: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  itemsPrice: number;
+  shippingPrice: number;
+  taxPrice: number;
+  discountAmount?: number;
+  couponCode?: string;
+  totalPrice: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Review {
+  _id: string;
+  user: string | Pick<User, '_id' | 'username' | 'email'>;
+  product: string;
+  rating: number;
+  comment: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WishlistItem {
+  _id: string;
+  user: string;
+  product: Product | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type DiscountType = 'percentage' | 'fixed';
+
+export interface Coupon {
+  _id: string;
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  expirationDate: string;
+  usageLimit: number | null;
+  usedCount: number;
+  minimumOrderAmount: number;
+  isActive: boolean;
+  description?: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+  };
+}
+
+export interface ApiError {
+  message: string;
+  code?: string;
+  errors?: unknown;
+}
+
+export interface AuthResponse extends User {
+  token: string;
+  message?: string;
+}
+
+/** @deprecated Craftify legacy — prefer Product */
+export type Template = Product;
+/** @deprecated Craftify legacy */
 export interface Creator {
   _id: string;
   name: string;
   username: string;
-  bio: string;
-  avatar: string;
-  website?: string;
-  socialLinks?: {
-    twitter?: string;
-    github?: string;
-    linkedin?: string;
-  };
-  templates: Template[];
-  followers: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Order {
-  _id: string;
-  user: User;
-  templates: Template[];
-  totalAmount: number;
-  status: 'pending' | 'completed' | 'cancelled';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
 }

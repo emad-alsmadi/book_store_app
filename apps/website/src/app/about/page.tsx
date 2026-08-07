@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Palette,
   Users,
-  Download,
+  Package,
+  Store,
   Star,
   Globe,
 } from 'lucide-react';
@@ -37,9 +38,9 @@ const team = [
 ];
 
 const stats = [
-  { value: '50K+', label: 'Templates', icon: Palette },
-  { value: '10K+', label: 'Creators', icon: Users },
-  { value: '1M+', label: 'Downloads', icon: Download },
+  { value: '50K+', label: 'Templates', icon: Package },
+  { value: '10K+', label: 'Brands', icon: Store },
+  { value: '1M+', label: 'Customers', icon: Users },
   { value: '4.8', label: 'Average Rating', icon: Star },
 ];
 
@@ -50,17 +51,17 @@ export default function AboutPage() {
       <motion.section
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className='bg-gradient-to-br from-indigo-600 via-purple-600 to-cyan-500 py-20'
+        className='py-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-cyan-500'
       >
         <div className='max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center'>
-          <div className='inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm font-extrabold text-white mb-6'>
-            <Sparkles className='h-4 w-4' />
+          <div className='inline-flex gap-2 items-center px-4 py-2 mb-6 text-sm font-extrabold text-white rounded-full border border-white/30 bg-white/20'>
+            <Sparkles className='w-4 h-4' />
             About Craftify
           </div>
-          <h1 className='text-4xl sm:text-5xl font-extrabold text-white mb-4'>
+          <h1 className='mb-4 text-4xl font-extrabold text-white sm:text-5xl'>
             The World's Best Templates Marketplace
           </h1>
-          <p className='text-lg text-white/90 max-w-2xl mx-auto'>
+          <p className='mx-auto max-w-2xl text-lg text-white/90'>
             We're on a mission to empower creators with beautiful, professional
             templates
           </p>
@@ -73,7 +74,7 @@ export default function AboutPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className='grid grid-cols-2 md:grid-cols-4 gap-6'
+          className='grid grid-cols-2 gap-6 md:grid-cols-4'
         >
           {stats.map((stat, index) => {
             const Icon = stat.icon;
@@ -84,13 +85,13 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className='bg-white rounded-2xl border border-gray-200 p-6 text-center'
+                className='p-6 text-center bg-white rounded-2xl border border-gray-200'
               >
-                <Icon className='h-8 w-8 text-indigo-600 mx-auto mb-3' />
+                <Icon className='mx-auto mb-3 w-8 h-8 text-indigo-600' />
                 <div className='text-3xl font-extrabold text-gray-900'>
                   {stat.value}
                 </div>
-                <div className='text-sm text-gray-600 mt-1'>{stat.label}</div>
+                <div className='mt-1 text-sm text-gray-600'>{stat.label}</div>
               </motion.div>
             );
           })}
@@ -101,26 +102,26 @@ export default function AboutPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className='bg-white rounded-3xl border border-gray-200 p-8 md:p-12'
+          className='p-8 bg-white rounded-3xl border border-gray-200 md:p-12'
         >
-          <div className='grid md:grid-cols-2 gap-8 items-center'>
+          <div className='grid gap-8 items-center md:grid-cols-2'>
             <div>
-              <h2 className='text-3xl font-extrabold text-gray-900 mb-4'>
+              <h2 className='mb-4 text-3xl font-extrabold text-gray-900'>
                 Our Mission
               </h2>
-              <p className='text-gray-600 mb-6'>
+              <p className='mb-6 text-gray-600'>
                 Craftify was founded with a simple goal: to make professional
                 design accessible to everyone. We believe that great design
                 shouldn't be reserved for those with big budgets.
               </p>
-              <p className='text-gray-600 mb-6'>
+              <p className='mb-6 text-gray-600'>
                 Our platform connects talented creators from around the world
                 with businesses and individuals looking for beautiful,
                 functional templates. Every template on our platform is
                 carefully curated to ensure the highest quality.
               </p>
-              <div className='flex items-center gap-2 text-indigo-600 font-semibold'>
-                <Globe className='h-5 w-5' />
+              <div className='flex gap-2 items-center font-semibold text-indigo-600'>
+                <Globe className='w-5 h-5' />
                 <span>Serving creators in 150+ countries</span>
               </div>
             </div>
@@ -149,8 +150,8 @@ export default function AboutPage() {
                   key={f.title}
                   className={`rounded-2xl border border-gray-200 bg-gradient-to-br ${f.tone} p-4`}
                 >
-                  <div className='inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/40'>
-                    <f.icon className='h-5 w-5 text-indigo-950' />
+                  <div className='inline-flex justify-center items-center w-10 h-10 rounded-2xl bg-white/40'>
+                    <f.icon className='w-5 h-5 text-indigo-950' />
                   </div>
                   <div className='mt-3 text-sm font-extrabold text-indigo-950'>
                     {f.title}
@@ -170,10 +171,10 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className='text-3xl font-extrabold text-gray-900 mb-8 text-center'>
+          <h2 className='mb-8 text-3xl font-extrabold text-center text-gray-900'>
             Meet Our Team
           </h2>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-6'>
+          <div className='grid grid-cols-2 gap-6 md:grid-cols-4'>
             {team.map((member, index) => (
               <motion.div
                 key={member.name}
@@ -181,9 +182,9 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className='bg-white rounded-2xl border border-gray-200 overflow-hidden'
+                className='overflow-hidden bg-white rounded-2xl border border-gray-200'
               >
-                <div className='aspect-square relative'>
+                <div className='relative aspect-square'>
                   <Image
                     src={member.image}
                     alt={member.name}
@@ -206,12 +207,12 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
-          className='bg-white rounded-3xl border border-gray-200 p-8 md:p-12'
+          className='p-8 bg-white rounded-3xl border border-gray-200 md:p-12'
         >
-          <h2 className='text-2xl font-extrabold tracking-tight text-gray-900 mb-4'>
+          <h2 className='mb-4 text-2xl font-extrabold tracking-tight text-gray-900'>
             Built with Modern Technology
           </h2>
-          <p className='mt-3 max-w-3xl text-sm font-semibold text-gray-600 mb-6'>
+          <p className='mt-3 mb-6 max-w-3xl text-sm font-semibold text-gray-600'>
             The app follows an API-first approach. Pages are structured to be
             reusable and scalable, with motion layers to keep the UI dynamic.
           </p>
@@ -235,7 +236,7 @@ export default function AboutPage() {
                 key={s.title}
                 whileHover={{ y: -3 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className='rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5'
+                className='p-5 bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200'
               >
                 <div className='text-sm font-extrabold text-gray-900'>
                   {s.title}

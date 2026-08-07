@@ -16,6 +16,9 @@
     "build:website": "npm run build --workspace=apps/website",
     "build:dashboard": "npm run build --workspace=apps/dashboard",
     "lint": "npm run lint --workspaces",
+    "test:api": "npm run test --workspace=apps/api",
+    "typecheck:website": "npx --workspace=apps/website tsc --noEmit",
+    "typecheck:types": "npm run type-check --workspace=packages/types",
     "clean": "npm run clean --workspaces && rm -rf node_modules"
   },
   "devDependencies": {
