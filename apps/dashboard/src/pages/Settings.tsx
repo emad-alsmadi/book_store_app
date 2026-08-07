@@ -1,161 +1,342 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Save, Bell, Shield, Palette } from 'lucide-react';
+import { Save, Shield, Palette, User, LogOut, Loader2 } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import {
+  adminUsersApi,
+  authApi,
+  errorMessage,
+} from '../lib/api';
+import { clearAuthSession, getAuthRole } from '../lib/auth';
+
+const PROFILE_KEY = ['auth', 'profile'] as const;
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { theme, toggleTheme } = useTheme();
+
+  const profileQ = useQuery({
+    queryKey: PROFILE_KEY,
+    queryFn: () => authApi.getProfile(),
+    staleTime: 30_000,
+  });
+
+  const user = profileQ.data?.user;
+  const permissions = profileQ.data?.permissions || [];
+
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [profileErr, setProfileErr] = useState<string | null>(null);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
+  const [passwordErr, setPasswordErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setUsername(user.username || '');
+    setEmail(user.email || '');
+  }, [user]);
+
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileMsg(null);
+    setProfileErr(null);
+    setProfileSaving(true);
+    try {
+      await authApi.updateProfile({
+        username: username.trim(),
+        email: email.trim(),
+      });
+      await qc.invalidateQueries({ queryKey: PROFILE_KEY });
+      setProfileMsg('Profile updated.');
+    } catch (err) {
+      setProfileErr(errorMessage(err, 'Could not update profile'));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  async function savePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordMsg(null);
+    setPasswordErr(null);
+
+    if (!user?._id) {
+      setPasswordErr('Profile not loaded yet.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordErr('Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordErr('Passwords do not match.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      // Uses admin users update (requires users:write). No current-password check on API.
+      await adminUsersApi.updateUser(user._id, { password: newPassword });
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordMsg('Password updated.');
+    } catch (err) {
+      setPasswordErr(
+        errorMessage(
+          err,
+          'Could not update password (needs users:write permission)',
+        ),
+      );
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
+  async function handleLogout() {
+    await authApi.logout();
+    clearAuthSession();
+    navigate('/login');
+  }
+
+  const apiBase =
+    (import.meta.env.VITE_API_URL as string | undefined) || '/api (Vite proxy)';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
     >
-      <h1 className='text-3xl font-bold text-gray-900 dark:text-white mb-8'>
+      <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
         Settings
       </h1>
+      <p className="mb-8 text-sm text-gray-600 dark:text-gray-400">
+        Account, appearance, and session — wired to the live API where
+        available.
+      </p>
 
-      <div className='space-y-6'>
-        {/* General Settings */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-        >
-          <div className='flex items-center mb-4'>
-            <Palette className='w-5 h-5 text-blue-500 mr-2' />
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
-              General Settings
-            </h2>
-          </div>
-          <div className='space-y-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                Site Name
-              </label>
-              <input
-                type='text'
-                defaultValue='TrendVault Dashboard'
-                className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500'
-              />
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                Description
-              </label>
-              <textarea
-                rows={3}
-                defaultValue='Admin dashboard for TrendVault E-commerce Platform'
-                className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500'
-              />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Notification Settings */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-        >
-          <div className='flex items-center mb-4'>
-            <Bell className='w-5 h-5 text-blue-500 mr-2' />
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
-              Notification Settings
-            </h2>
-          </div>
-          <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-gray-900 dark:text-white'>
-                  Email Notifications
-                </p>
-                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Receive email updates about important events
-                </p>
-              </div>
-              <label className='relative inline-flex items-center cursor-pointer'>
-                <input
-                  type='checkbox'
-                  defaultChecked
-                  className='sr-only peer'
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" />
-              </label>
-            </div>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-gray-900 dark:text-white'>
-                  Push Notifications
-                </p>
-                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Receive push notifications in browser
-                </p>
-              </div>
-              <label className='relative inline-flex items-center cursor-pointer'>
-                <input
-                  type='checkbox'
-                  className='sr-only peer'
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" />
-              </label>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Security Settings */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className='bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700'
-        >
-          <div className='flex items-center mb-4'>
-            <Shield className='w-5 h-5 text-blue-500 mr-2' />
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
-              Security Settings
-            </h2>
-          </div>
-          <div className='space-y-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                Current Password
-              </label>
-              <input
-                type='password'
-                placeholder='Enter current password'
-                className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500'
-              />
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                New Password
-              </label>
-              <input
-                type='password'
-                placeholder='Enter new password'
-                className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500'
-              />
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                Confirm New Password
-              </label>
-              <input
-                type='password'
-                placeholder='Confirm new password'
-                className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500'
-              />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Save Button */}
-        <div className='flex justify-end'>
-          <button className='flex items-center px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'>
-            <Save className='w-5 h-5 mr-2' />
-            Save Changes
-          </button>
+      {profileQ.isLoading && (
+        <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading profile…
         </div>
+      )}
+
+      {profileQ.isError && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          {errorMessage(profileQ.error, 'Failed to load profile')}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* Account */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center">
+            <User className="mr-2 h-5 w-5 text-blue-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Account
+            </h2>
+          </div>
+          <form onSubmit={saveProfile} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Username
+              </label>
+              <input
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              />
+            </div>
+            {profileMsg && (
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {profileMsg}
+              </p>
+            )}
+            {profileErr && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {profileErr}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={profileSaving || profileQ.isLoading}
+              className="inline-flex items-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-60"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {profileSaving ? 'Saving…' : 'Save profile'}
+            </button>
+          </form>
+        </section>
+
+        {/* Appearance */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center">
+            <Palette className="mr-2 h-5 w-5 text-blue-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Appearance
+            </h2>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Dark mode
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Stored locally in this browser
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-pressed={theme === 'dark'}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
+                  theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
+        </section>
+
+        {/* Password */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center">
+            <Shield className="mr-2 h-5 w-5 text-blue-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Password
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            Updates via admin users API. API does not verify the current
+            password.
+          </p>
+          <form onSubmit={savePassword} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                New password
+              </label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Confirm new password
+              </label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              />
+            </div>
+            {passwordMsg && (
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {passwordMsg}
+              </p>
+            )}
+            {passwordErr && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {passwordErr}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={passwordSaving || !user}
+              className="inline-flex items-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-60"
+            >
+              {passwordSaving ? 'Updating…' : 'Update password'}
+            </button>
+          </form>
+        </section>
+
+        {/* Session / env */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+            Session
+          </h2>
+          <dl className="mb-4 space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-gray-500">Role cookie</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">
+                {getAuthRole() || '—'}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-gray-500">Roles</dt>
+              <dd className="font-medium text-gray-900 dark:text-white">
+                {(user?.roles || []).join(', ') || '—'}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-gray-500">API base</dt>
+              <dd className="font-mono text-xs text-gray-900 dark:text-white">
+                {apiBase}
+              </dd>
+            </div>
+            {permissions.length > 0 && (
+              <div>
+                <dt className="mb-1 text-gray-500">Permissions</dt>
+                <dd className="flex flex-wrap gap-1">
+                  {permissions.slice(0, 12).map((p) => (
+                    <span
+                      key={p}
+                      className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                  {permissions.length > 12 && (
+                    <span className="text-xs text-gray-500">
+                      +{permissions.length - 12} more
+                    </span>
+                  )}
+                </dd>
+              </div>
+            )}
+          </dl>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="inline-flex items-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </button>
+        </section>
       </div>
     </motion.div>
   );

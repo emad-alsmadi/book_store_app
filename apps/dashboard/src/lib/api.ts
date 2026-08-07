@@ -82,10 +82,47 @@ function errorMessage(err: unknown, fallback: string) {
 
 export { errorMessage };
 
+export type ProfileUser = {
+  _id: string;
+  email: string;
+  username: string;
+  roles?: string[];
+  createdAt?: string;
+};
+
+export type ProfileResponse = {
+  user: ProfileUser;
+  permissions?: string[];
+};
+
 export const authApi = {
   login: async (payload: { email: string; password: string }) => {
     const { data } = await api.post<LoginResponse>('/auth/login', payload);
     return data;
+  },
+
+  getProfile: async (): Promise<ProfileResponse> => {
+    const { data } = await api.get<ProfileResponse>('/auth/profile');
+    return data;
+  },
+
+  updateProfile: async (payload: {
+    username: string;
+    email: string;
+  }): Promise<{ message: string; user: ProfileUser }> => {
+    const { data } = await api.put<{ message: string; user: ProfileUser }>(
+      '/auth/profile',
+      payload,
+    );
+    return data;
+  },
+
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Stateless JWT — clear local session even if request fails
+    }
   },
 };
 
