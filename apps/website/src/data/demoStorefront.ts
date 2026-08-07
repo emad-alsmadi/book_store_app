@@ -1,0 +1,255 @@
+/**
+ * DEMO / MOCK storefront merchandising data.
+ * Easy to replace with API hooks later (see docs/STOREFRONT_BACKEND_BACKLOG.md).
+ *
+ * TODO(api): GET /api/storefront/home
+ * TODO(api): GET /api/offers
+ * TODO(api): GET /api/brands?featured=true
+ */
+
+export type DemoBadge = 'bestseller' | 'lowStock' | 'new';
+
+export type DemoTrustItem = {
+  id: string;
+  icon: 'truck' | 'refresh' | 'shield' | 'headset';
+  title: string;
+  description: string;
+};
+
+export type DemoDeal = {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  href: string;
+  /** Local placeholder assets only — not scraped from third parties */
+  imageUrl: string;
+};
+
+export type DemoBrand = {
+  id: string;
+  name: string;
+  tagline: string;
+  href: string;
+  accent: string;
+};
+
+export type DemoCategoryShortcut = {
+  name: string;
+  countLabel: string;
+  href: string;
+  accent: string;
+  icon: 'sparkles' | 'shirt' | 'heart' | 'watch' | 'home' | 'gift' | 'sun' | 'bag';
+};
+
+/** DEMO — trust / service strip */
+export const DEMO_TRUST_ITEMS: DemoTrustItem[] = [
+  {
+    id: 'shipping',
+    icon: 'truck',
+    title: 'Fast shipping',
+    description: 'Tracked delivery on every order',
+  },
+  {
+    id: 'returns',
+    icon: 'refresh',
+    title: 'Easy returns',
+    description: 'Hassle-free returns within policy window',
+  },
+  {
+    id: 'secure',
+    icon: 'shield',
+    title: 'Secure checkout',
+    description: 'Encrypted payments you can trust',
+  },
+  {
+    id: 'support',
+    icon: 'headset',
+    title: 'Care support',
+    description: 'Real people ready to help',
+  },
+];
+
+/** DEMO — offers rail (replace with GET /api/offers) */
+export const DEMO_DEALS: DemoDeal[] = [
+  {
+    id: 'deal-glow',
+    title: 'Glow edit',
+    subtitle: 'Skincare picks for a fresh finish',
+    badge: 'Limited',
+    href: '/products?category=beauty',
+    imageUrl: '/images/1.webp',
+  },
+  {
+    id: 'deal-fashion',
+    title: 'Wardrobe refresh',
+    subtitle: 'New-season essentials under your budget',
+    badge: 'Trending',
+    href: '/products?category=fashion',
+    imageUrl: '/images/2.webp',
+  },
+  {
+    id: 'deal-lifestyle',
+    title: 'Home & lifestyle',
+    subtitle: 'Quiet luxury accents for everyday',
+    badge: 'New',
+    href: '/products?category=lifestyle',
+    imageUrl: '/images/3.webp',
+  },
+  {
+    id: 'deal-gift',
+    title: 'Gift-ready sets',
+    subtitle: 'Curated bundles for someone special',
+    badge: 'Gift',
+    href: '/products?q=gift',
+    imageUrl: '/images/4.webp',
+  },
+];
+
+/** DEMO — featured brands strip */
+export const DEMO_FEATURED_BRANDS: DemoBrand[] = [
+  {
+    id: 'brand-aura',
+    name: 'Aura Lab',
+    tagline: 'Clean beauty rituals',
+    href: '/products?q=beauty',
+    accent: 'from-rose-500 to-amber-400',
+  },
+  {
+    id: 'brand-thread',
+    name: 'Thread & Form',
+    tagline: 'Modern wardrobe basics',
+    href: '/products?q=fashion',
+    accent: 'from-slate-700 to-stone-500',
+  },
+  {
+    id: 'brand-lumen',
+    name: 'Lumen Home',
+    tagline: 'Soft lifestyle pieces',
+    href: '/products?q=home',
+    accent: 'from-teal-600 to-cyan-500',
+  },
+  {
+    id: 'brand-noir',
+    name: 'Noir Atelier',
+    tagline: 'Evening accessories',
+    href: '/products?q=accessories',
+    accent: 'from-zinc-800 to-neutral-600',
+  },
+];
+
+/** DEMO — category shortcuts for homepage */
+export const DEMO_CATEGORY_SHORTCUTS: DemoCategoryShortcut[] = [
+  {
+    name: 'Beauty',
+    countLabel: 'Skincare & makeup',
+    href: '/products?category=beauty',
+    accent: 'from-rose-500 to-pink-600',
+    icon: 'sparkles',
+  },
+  {
+    name: 'Fashion',
+    countLabel: 'Ready-to-wear',
+    href: '/products?category=fashion',
+    accent: 'from-stone-600 to-neutral-800',
+    icon: 'shirt',
+  },
+  {
+    name: 'Wellness',
+    countLabel: 'Self-care picks',
+    href: '/products?category=wellness',
+    accent: 'from-emerald-500 to-teal-600',
+    icon: 'heart',
+  },
+  {
+    name: 'Accessories',
+    countLabel: 'Bags & details',
+    href: '/products?category=accessories',
+    accent: 'from-amber-500 to-orange-600',
+    icon: 'watch',
+  },
+  {
+    name: 'Home',
+    countLabel: 'Lifestyle living',
+    href: '/products?category=home',
+    accent: 'from-sky-500 to-indigo-600',
+    icon: 'home',
+  },
+  {
+    name: 'Gifts',
+    countLabel: 'Thoughtful sets',
+    href: '/products?q=gift',
+    accent: 'from-fuchsia-500 to-violet-600',
+    icon: 'gift',
+  },
+  {
+    name: 'Summer edit',
+    countLabel: 'Light layers',
+    href: '/products?q=summer',
+    accent: 'from-yellow-400 to-amber-500',
+    icon: 'sun',
+  },
+  {
+    name: 'New arrivals',
+    countLabel: 'Just dropped',
+    href: '/products?sort=createdAt',
+    accent: 'from-cyan-500 to-blue-600',
+    icon: 'bag',
+  },
+];
+
+/**
+ * DEMO badge overlay for homepage product rails.
+ * Maps list index → badges until Product.badges exists in API.
+ * TODO(api): read badges from product payload
+ */
+export function getDemoBadgesForIndex(index: number): DemoBadge[] {
+  if (index === 0) return ['bestseller'];
+  if (index === 1) return ['new'];
+  if (index === 2) return ['lowStock'];
+  if (index % 5 === 0) return ['bestseller'];
+  return [];
+}
+
+/**
+ * DEMO recommendation stub — category affinity + exclude recently viewed.
+ * TODO(api): GET /api/recommendations?context=home
+ */
+export function pickInspiredProducts<
+  T extends { _id: string; category?: string },
+>(
+  catalog: T[],
+  options: {
+    excludeIds?: string[];
+    preferredCategories?: string[];
+    limit?: number;
+  } = {},
+): T[] {
+  const limit = options.limit ?? 8;
+  const exclude = new Set(options.excludeIds ?? []);
+  const preferred = new Set(
+    (options.preferredCategories ?? [])
+      .filter(Boolean)
+      .map((c) => c.toLowerCase()),
+  );
+
+  const unused = catalog.filter((p) => !exclude.has(p._id));
+  const pool = unused.length > 0 ? unused : catalog;
+
+  const ranked = [
+    ...pool.filter(
+      (p) => p.category && preferred.has(String(p.category).toLowerCase()),
+    ),
+    ...pool.filter(
+      (p) => !p.category || !preferred.has(String(p.category).toLowerCase()),
+    ),
+  ];
+
+  // Rotate so the rail differs from a plain “newest first” featured grid
+  const rotated =
+    ranked.length > 3
+      ? [...ranked.slice(3), ...ranked.slice(0, 3)]
+      : [...ranked].reverse();
+
+  return rotated.slice(0, limit);
+}

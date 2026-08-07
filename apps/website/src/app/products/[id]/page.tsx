@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useProductById } from '@/hooks/products/productsQuery';
 import { motion } from 'framer-motion';
 import {
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { useCart } from '@/lib/cartStore';
 import { ProductCard } from '@/components/products/ProductCard';
+import { trackRecentlyViewed } from '@/lib/recentlyViewed';
 
 export default function ProductDetailPage({
   params,
@@ -33,6 +34,18 @@ export default function ProductDetailPage({
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const cart = useCart();
+
+  // DEMO: local recently viewed — TODO(api): POST /api/me/recently-viewed
+  useEffect(() => {
+    if (!product) return;
+    trackRecentlyViewed({
+      id: product._id,
+      title: product.title,
+      cover: product.cover,
+      price: product.price,
+      category: product.category,
+    });
+  }, [product]);
 
   if (isLoading) {
     return (

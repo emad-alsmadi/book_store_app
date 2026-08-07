@@ -1,56 +1,26 @@
 'use client';
 
 import Link from 'next/link';
+import { DEMO_CATEGORY_SHORTCUTS } from '@/data/demoStorefront';
 
+/** Retail category tiles — DEMO labels; hrefs hit live catalog filters */
 export function FeaturedCategories() {
-  const categories = [
-    {
-      name: 'Website Templates',
-      count: '2,543 items',
-      href: '/templates?category=website',
-      image: '/images/4 (2).jpg',
-    },
-    {
-      name: 'WordPress',
-      count: '1,876 items',
-      href: '/templates?category=wordpress',
-      image: '/images/4 (3).jpg',
-    },
-    {
-      name: 'E-commerce',
-      count: '1,234 items',
-      href: '/templates?category=ecommerce',
-      image: '/images/4 (4).jpg',
-    },
-    {
-      name: 'UI Kits',
-      count: '987 items',
-      href: '/templates?category=uikits',
-      image: '/images/4 (5).jpg',
-    },
-    {
-      name: 'Marketing',
-      count: '654 items',
-      href: '/templates?category=marketing',
-      image: '/images/4 (6).jpg',
-    },
-    {
-      name: 'CMS Themes',
-      count: '432 items',
-      href: '/templates?category=cmsthemes',
-      image: '/images/4 (7).jpg',
-    },
-  ];
+  const categories = DEMO_CATEGORY_SHORTCUTS.slice(0, 6).map((c, i) => ({
+    name: c.name,
+    count: c.countLabel,
+    href: c.href,
+    image: `/images/${(i % 4) + 1}.webp`,
+  }));
 
   return (
     <div className='bg-slate-50 py-20'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='text-center mb-12'>
           <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-            Browse by Category
+            Browse by category
           </h2>
           <p className='text-gray-600 text-lg'>
-            Find the perfect template for your specific needs
+            Beauty, fashion, and lifestyle edits for every mood
           </p>
         </div>
 

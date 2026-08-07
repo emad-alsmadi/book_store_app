@@ -1,0 +1,80 @@
+'use client';
+
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { DEMO_DEALS, type DemoDeal } from '@/data/demoStorefront';
+
+type Props = {
+  deals?: DemoDeal[];
+};
+
+/** DEMO module — TODO(api): GET /api/offers */
+export function DealsRail({ deals = DEMO_DEALS }: Props) {
+  return (
+    <section
+      aria-labelledby='deals-heading'
+      className='bg-white py-12 sm:py-16'
+    >
+      <div className='mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8'>
+        <div className='mb-6 flex items-end justify-between gap-4'>
+          <div>
+            <p className='text-xs font-medium uppercase tracking-wider text-rose-600'>
+              Demo offers
+            </p>
+            <h2
+              id='deals-heading'
+              className='mt-1 text-2xl font-extrabold text-stone-900 sm:text-3xl'
+            >
+              Limited-time edits
+            </h2>
+            <p className='mt-1 text-sm text-stone-600'>
+              Curated promotions — replace with live offers API later.
+            </p>
+          </div>
+          <Link
+            href='/products'
+            className='hidden text-sm font-semibold text-fuchsia-700 hover:text-fuchsia-800 sm:inline'
+          >
+            Shop all
+          </Link>
+        </div>
+
+        <div className='-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4'>
+          {deals.map((deal, index) => (
+            <motion.div
+              key={deal.id}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35, delay: index * 0.05 }}
+              className='min-w-[78%] snap-start sm:min-w-0'
+            >
+              <Link
+                href={deal.href}
+                className='group block overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500'
+              >
+                <div className='relative aspect-[4/3] overflow-hidden'>
+                  <img
+                    src={deal.imageUrl}
+                    alt=''
+                    className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+                    loading='lazy'
+                  />
+                  <span className='absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-900 shadow-sm'>
+                    {deal.badge}
+                  </span>
+                </div>
+                <div className='p-4'>
+                  <h3 className='font-semibold text-stone-900 group-hover:text-fuchsia-700'>
+                    {deal.title}
+                  </h3>
+                  <p className='mt-1 text-sm text-stone-600'>{deal.subtitle}</p>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

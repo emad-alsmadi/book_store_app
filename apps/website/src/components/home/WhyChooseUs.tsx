@@ -1,29 +1,29 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Shield, Zap, HeadphonesIcon, Award } from 'lucide-react';
+import { Shield, Truck, HeadphonesIcon, RotateCcw } from 'lucide-react';
 
 export function WhyChooseUs() {
   const features = [
     {
-      icon: Shield,
-      title: 'Quality Assurance',
-      description: 'All templates are reviewed and tested by our expert team',
+      icon: Truck,
+      title: 'Reliable delivery',
+      description: 'Clear shipping options and tracking on every order',
     },
     {
-      icon: Zap,
-      title: 'Fast Delivery',
-      description: 'Instant download access immediately after purchase',
+      icon: RotateCcw,
+      title: 'Easy returns',
+      description: 'Straightforward returns within our store policy window',
+    },
+    {
+      icon: Shield,
+      title: 'Secure payments',
+      description: 'Checkout protected with industry-standard encryption',
     },
     {
       icon: HeadphonesIcon,
-      title: '24/7 Support',
-      description: 'Our support team is always ready to help you',
-    },
-    {
-      icon: Award,
-      title: 'Best Prices',
-      description: 'Competitive pricing with regular discounts and offers',
+      title: 'Care support',
+      description: 'Friendly help when you need sizing, gifts, or order care',
     },
   ];
 
@@ -32,10 +32,10 @@ export function WhyChooseUs() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='text-center mb-12'>
           <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-            Why Choose Craftify?
+            Why shop TrendVaulta
           </h2>
           <p className='text-gray-600 text-lg'>
-            We provide the best template marketplace experience
+            A calmer retail experience for beauty, fashion, and lifestyle
           </p>
         </div>
 

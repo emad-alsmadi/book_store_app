@@ -5,28 +5,28 @@ import { motion } from 'framer-motion';
 export function Testimonials() {
   const testimonials = [
     {
-      name: 'Sarah Johnson',
-      role: 'Web Developer',
+      name: 'Sara Alami',
+      role: 'Beauty enthusiast',
       content:
-        'Craftify has been a game-changer for my freelance business. The templates are top-notch and save me countless hours of work.',
+        'TrendVaulta makes finding skincare and everyday glam so much easier. Clear prices, fast browsing, and products that feel curated.',
       rating: 5,
-      avatar: 'SJ',
+      avatar: 'SA',
     },
     {
-      name: 'Michael Chen',
-      role: 'Agency Owner',
+      name: 'Omar Nasser',
+      role: 'Style shopper',
       content:
-        'The quality of templates on Craftify is unmatched. We use them for all our client projects and they always impress.',
+        'I love how clean the shopping flow feels. From discovery to checkout, it is polished without being overwhelming.',
       rating: 5,
-      avatar: 'MC',
+      avatar: 'ON',
     },
     {
-      name: 'Emily Davis',
-      role: 'Startup Founder',
+      name: 'Layla Habib',
+      role: 'Gift buyer',
       content:
-        'As a startup, we needed professional templates on a budget. Craftify delivered exactly that with excellent support.',
+        'Great for thoughtful gifts and lifestyle pieces. Support was helpful when I needed a quick order update.',
       rating: 5,
-      avatar: 'ED',
+      avatar: 'LH',
     },
   ];
 
@@ -35,10 +35,10 @@ export function Testimonials() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='text-center mb-12'>
           <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-            What Our Customers Say
+            What our customers say
           </h2>
           <p className='text-gray-600 text-lg'>
-            Join thousands of satisfied customers who trust Craftify
+            Shoppers who trust TrendVaulta for beauty, fashion, and lifestyle
           </p>
         </div>
 

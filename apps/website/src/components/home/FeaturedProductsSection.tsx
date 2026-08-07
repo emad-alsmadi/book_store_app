@@ -1,0 +1,110 @@
+'use client';
+
+import Link from 'next/link';
+import { ProductCard } from '@/components/products/ProductCard';
+import { getDemoBadgesForIndex } from '@/data/demoStorefront';
+
+type FeaturedProduct = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  basePrice: number;
+  cover: string;
+  averageRating: number;
+  reviewCount: number;
+  category: string;
+  subcategory?: string;
+  brand?: {
+    name: string;
+    slug: string;
+    _id?: string;
+  };
+  stock?: number;
+};
+
+type Props = {
+  products: FeaturedProduct[];
+  loading?: boolean;
+  error?: string | null;
+};
+
+/**
+ * Featured / best-sellers rail.
+ * Uses live product list when available; badges are DEMO until API provides them.
+ * TODO(api): GET /api/products?sort=bestselling or /api/storefront/featured
+ */
+export function FeaturedProductsSection({
+  products,
+  loading = false,
+  error = null,
+}: Props) {
+  return (
+    <section
+      aria-labelledby='featured-heading'
+      className='bg-white py-12 sm:py-16'
+    >
+      <div className='mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8'>
+        <div className='mb-6 flex items-end justify-between gap-4'>
+          <div>
+            <p className='text-xs font-medium uppercase tracking-wider text-fuchsia-700'>
+              Bestsellers
+            </p>
+            <h2
+              id='featured-heading'
+              className='mt-1 text-2xl font-extrabold text-stone-900 sm:text-3xl'
+            >
+              Featured picks
+            </h2>
+            <p className='mt-1 text-sm text-stone-600'>
+              From the catalog — badge labels are demo flags for now.
+            </p>
+          </div>
+          <Link
+            href='/products'
+            className='text-sm font-semibold text-fuchsia-700 hover:text-fuchsia-800'
+          >
+            View catalog
+          </Link>
+        </div>
+
+        {loading && (
+          <p className='py-10 text-center text-sm text-stone-500'>
+            Loading featured products…
+          </p>
+        )}
+
+        {!loading && error && (
+          <div className='rounded-xl border border-rose-200 bg-rose-50 px-4 py-6 text-center text-sm text-rose-700'>
+            Could not load products. Browse the{' '}
+            <Link
+              href='/products'
+              className='font-semibold underline'
+            >
+              full catalog
+            </Link>
+            .
+          </div>
+        )}
+
+        {!loading && !error && products.length === 0 && (
+          <div className='rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-10 text-center text-sm text-stone-600'>
+            No products yet. Seed the catalog or check API connectivity.
+          </div>
+        )}
+
+        {!loading && !error && products.length > 0 && (
+          <div className='grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4'>
+            {products.map((product, index) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                badges={getDemoBadgesForIndex(index)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

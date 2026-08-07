@@ -4,51 +4,39 @@ import { useRouter } from 'next/navigation';
 import type { ProductsQuery } from '@/types';
 import { useProducts } from '@/hooks/products/productsQuery';
 import { HeroSection } from '@/components/home/HeroSection';
+import { TrustServiceStrip } from '@/components/home/TrustServiceStrip';
+import { PopularCategories } from '@/components/home/PopularCategories';
+import { DealsRail } from '@/components/home/DealsRail';
+import { FeaturedProductsSection } from '@/components/home/FeaturedProductsSection';
+import { FeaturedBrandsStrip } from '@/components/home/FeaturedBrandsStrip';
+import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection';
+import { InspiredByBrowsingSection } from '@/components/home/InspiredByBrowsingSection';
+import { WhyChooseUs } from '@/components/home/WhyChooseUs';
 import { Testimonials } from '@/components/home/Testimonials';
 import { CTASection } from '@/components/home/CTASection';
-import { PopularCategories } from '@/components/home/PopularCategories';
 
 export default function HomePage() {
   const router = useRouter();
-  const [query, setQuery] = useState<ProductsQuery>({
+  const [query] = useState<ProductsQuery>({
     page: 1,
-    limit: 8,
+    limit: 16,
+    // TODO(api): switch to sort=bestselling when backend supports it
     sort: 'createdAt',
   });
   const [searchQuery, setSearchQuery] = useState('');
 
   const stableQuery = useMemo(() => query, [query]);
   const productsQuery = useProducts(stableQuery);
-  const data = productsQuery.data;
+  const products = productsQuery.data?.data ?? [];
+  const featuredProducts = products.slice(0, 8);
   const loading = productsQuery.isLoading;
-  const error = (productsQuery.error as any)?.message || null;
-
-  const handlePageChange = (page: number) => {
-    setQuery((q: ProductsQuery) => ({ ...q, page }));
-  };
-
-  const handleFiltersChange = (newFilters: any) => {
-    setQuery((q: ProductsQuery) => ({ ...q, ...newFilters, page: 1 }));
-  };
+  const error = (productsQuery.error as { message?: string } | null)?.message || null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
     }
-  };
-
-  const gridVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.06, delayChildren: 0.05 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 },
   };
 
   return (
@@ -59,7 +47,28 @@ export default function HomePage() {
         onSearchSubmit={handleSearch}
       />
 
+      <TrustServiceStrip />
+
       <PopularCategories />
+
+      <DealsRail />
+
+      <FeaturedProductsSection
+        products={featuredProducts}
+        loading={loading}
+        error={error}
+      />
+
+      <FeaturedBrandsStrip />
+
+      <RecentlyViewedSection />
+
+      <InspiredByBrowsingSection
+        products={products}
+        loading={loading}
+      />
+
+      <WhyChooseUs />
 
       <Testimonials />
 

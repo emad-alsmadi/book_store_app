@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/lib/cartStore';
 
+export type ProductCardBadge = 'bestseller' | 'lowStock' | 'new';
+
 interface ProductCardProps {
   product: {
     _id: string;
@@ -25,9 +27,11 @@ interface ProductCardProps {
     };
     stock?: number;
   };
+  /** DEMO / future API merchandising flags */
+  badges?: ProductCardBadge[];
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, badges = [] }: ProductCardProps) {
   const cart = useCart();
 
   const handleAddToCart = () => {
@@ -48,6 +52,9 @@ export function ProductCard({ product }: ProductCardProps) {
       : 0;
 
   const inStock = product.stock !== undefined ? product.stock > 0 : true;
+  const lowStock =
+    badges.includes('lowStock') ||
+    (product.stock !== undefined && product.stock > 0 && product.stock <= 5);
 
   return (
     <motion.div
@@ -64,14 +71,31 @@ export function ProductCard({ product }: ProductCardProps) {
             className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
             loading='lazy'
           />
-          {discount > 0 && (
-            <div className='absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
-              -{discount}%
-            </div>
-          )}
+          <div className='absolute top-2 left-2 flex flex-col gap-1 items-start'>
+            {discount > 0 && (
+              <span className='bg-rose-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
+                -{discount}%
+              </span>
+            )}
+            {badges.includes('bestseller') && (
+              <span className='bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
+                Bestseller
+              </span>
+            )}
+            {badges.includes('new') && (
+              <span className='bg-teal-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
+                New
+              </span>
+            )}
+          </div>
           {!inStock && (
             <div className='absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
               Out of Stock
+            </div>
+          )}
+          {inStock && lowStock && (
+            <div className='absolute top-2 right-2 bg-orange-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm'>
+              Low stock
             </div>
           )}
 
