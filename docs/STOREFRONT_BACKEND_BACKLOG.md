@@ -156,7 +156,7 @@
 
 ---
 
-## 9. Bundles / frequently bought together
+## 9. Bundles / frequently bought together (“complete the look”)
 
 | Field | Value |
 |---|---|
@@ -176,6 +176,63 @@
 }
 ```
 
+**Frontend swap:** Replace `CompleteTheLookSection` demo picker with this endpoint. Keep “Add selected to cart” on existing cart store only.
+
+---
+
+## 10. Editorial lookbook / inspiration modules
+
+| Field | Value |
+|---|---|
+| **Proposed endpoint** | `GET /api/storefront/lookbooks` **or** modules inside `GET /api/storefront/home` |
+| **Auth** | Public |
+| **Priority** | P2 |
+| **Depends on** | CMS content / `StorefrontModule` type `lookbook` |
+
+**Response shape (draft):**
+```json
+{
+  "message": "ok",
+  "results": [
+    {
+      "id": "…",
+      "eyebrow": "Edit",
+      "title": "Soft morning ritual",
+      "body": "string",
+      "ctaLabel": "Shop the edit",
+      "ctaHref": "/products?q=skincare",
+      "imageUrl": "…",
+      "tone": "rose"
+    }
+  ]
+}
+```
+
+**Frontend swap:** Replace `DEMO_LOOKBOOK_STORIES` in `EditorialLookbookSection`.
+
+---
+
+## 11. Gift finder config
+
+| Field | Value |
+|---|---|
+| **Proposed endpoint** | `GET /api/storefront/gift-finder` |
+| **Auth** | Public |
+| **Priority** | P2 |
+| **Depends on** | CMS / storefront config; optional curated gift collections |
+
+**Response shape (draft):**
+```json
+{
+  "message": "ok",
+  "occasions": [{ "id": "birthday", "label": "Birthday", "q": "gift" }],
+  "recipients": [{ "id": "for-her", "label": "For her", "q": "beauty" }],
+  "budgets": [{ "id": "under-25", "label": "Under $25", "maxPrice": 25 }]
+}
+```
+
+**Frontend swap:** Replace `DEMO_GIFT_FINDER` / `buildGiftFinderHref` inputs in `GiftFinderSection`.
+
 ---
 
 ## Implementation order (backend)
@@ -185,6 +242,8 @@
 3. Featured brands flag  
 4. Recently viewed sync  
 5. Recommendations stub  
-6. Bundles  
+6. Bundles / complete-the-look  
+7. Lookbook CMS modules  
+8. Gift finder config  
 
 **Do not mark any of the above done until APIs exist and demos are swapped off.**

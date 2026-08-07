@@ -372,3 +372,46 @@ export function pickInspiredProducts<
 
   return rotated.slice(0, limit);
 }
+
+/**
+ * DEMO FBT companions — category affinity excluding the primary product.
+ * TODO(api): GET /api/products/:id/bundles
+ */
+export function pickBundleCompanions<
+  T extends { _id: string; category?: string },
+>(
+  catalog: T[],
+  options: {
+    primaryId: string;
+    category?: string;
+    limit?: number;
+  },
+): T[] {
+  return pickInspiredProducts(catalog, {
+    excludeIds: [options.primaryId],
+    preferredCategories: options.category ? [options.category] : [],
+    limit: options.limit ?? 2,
+  });
+}
+
+/**
+ * DEMO display-only bundle pricing (does not change checkout totals).
+ * Applies a small visual “bundle” discount when 2+ items are selected.
+ */
+export function getDemoBundlePricing(prices: number[]): {
+  subtotal: number;
+  bundleTotal: number;
+  savings: number;
+} {
+  const subtotal = prices.reduce(
+    (sum, p) => sum + (Number.isFinite(p) ? p : 0),
+    0,
+  );
+  if (prices.length < 2) {
+    return { subtotal, bundleTotal: subtotal, savings: 0 };
+  }
+  const discountRate = 0.08;
+  const savings = Math.round(subtotal * discountRate * 100) / 100;
+  const bundleTotal = Math.max(0, Math.round((subtotal - savings) * 100) / 100);
+  return { subtotal, bundleTotal, savings };
+}
