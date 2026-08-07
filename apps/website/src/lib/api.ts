@@ -225,6 +225,25 @@ export const ordersApi = {
   },
 };
 
+export type AdminOrdersQuery = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  paymentStatus?: string;
+  q?: string;
+};
+
+export type AdminOrderCustomer = {
+  _id?: string;
+  username?: string;
+  email?: string;
+};
+
+export type AdminOrder = Omit<Order, 'user'> & {
+  allowedNextStatuses?: string[];
+  user?: string | AdminOrderCustomer;
+};
+
 /**
  * Payments API - Handles Stripe payment operations
  */
@@ -389,10 +408,36 @@ export const adminApi = {
    * @returns Paginated products response
    */
   getProducts: async (
-    params: { page?: number; limit?: number } = {},
+    params: { page?: number; limit?: number; includeInactive?: boolean } = {},
   ): Promise<any> => {
     const { data } = await api.get('/products', {
-      params: { limit: 100, ...params },
+      params: { limit: 100, includeInactive: true, ...params },
+    });
+    return data;
+  },
+  /**
+   * Admin order list (paginated)
+   */
+  getOrders: async (
+    params: AdminOrdersQuery = {},
+  ): Promise<{
+    data: AdminOrder[];
+    meta: { total: number; page: number; pages: number; limit: number };
+  }> => {
+    const { data } = await api.get(endpoints.admin.orders.list, {
+      params: { limit: 50, ...params },
+    });
+    return data;
+  },
+  /**
+   * Update order fulfillment status (allowed transitions only)
+   */
+  updateOrderStatus: async (
+    id: string,
+    status: string,
+  ): Promise<AdminOrder> => {
+    const { data } = await api.patch(endpoints.admin.orders.updateStatus(id), {
+      status,
     });
     return data;
   },

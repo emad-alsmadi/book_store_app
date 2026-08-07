@@ -65,6 +65,9 @@ export interface ProductsQuery {
   page?: number;
   limit?: number;
   sort?: string;
+  /** Staff only — ignored for anonymous catalog requests */
+  includeInactive?: boolean | string;
+  isActive?: boolean | string;
 }
 
 export interface ProductsResponse {

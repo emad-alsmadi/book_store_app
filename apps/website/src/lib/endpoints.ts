@@ -20,7 +20,9 @@ export const endpoints = {
   orders: {
     create: '/orders',
     my: '/orders/my',
+    list: '/orders',
     details: (id: string) => `/orders/${id}`,
+    updateStatus: (id: string) => `/orders/${id}/status`,
   },
   payments: {
     setupStatus: '/payments/setup-status',
@@ -39,6 +41,10 @@ export const endpoints = {
       create: '/coupons',
       update: (id: string) => `/coupons/${id}`,
       delete: (id: string) => `/coupons/${id}`,
+    },
+    orders: {
+      list: '/orders',
+      updateStatus: (id: string) => `/orders/${id}/status`,
     },
   },
   wishlist: {

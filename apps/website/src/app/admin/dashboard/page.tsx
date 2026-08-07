@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid, Shield, Users, Package } from 'lucide-react';
+import { LayoutGrid, Shield, Users, Package, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUserRole } from '@/lib/authCookies';
 import { useMe } from '@/hooks/auth/authQuery';
 import { AdminProductsPanel } from '@/components/admin/AdminProductsPanel';
 import { AdminBrandsPanel } from '@/components/admin/AdminBrandsPanel';
 import { AdminUsersPanel } from '@/components/admin/AdminUsersPanel';
+import { AdminOrdersPanel } from '@/components/admin/AdminOrdersPanel';
 
-type AdminTab = 'products' | 'brands' | 'users';
+type AdminTab = 'products' | 'brands' | 'users' | 'orders';
 
 const tabs: { id: AdminTab; label: string; icon: typeof LayoutGrid }[] = [
   { id: 'products', label: 'Products', icon: Package },
   { id: 'brands', label: 'Brands', icon: Users },
+  { id: 'orders', label: 'Orders', icon: ShoppingBag },
   { id: 'users', label: 'Users', icon: Shield },
 ];
 
@@ -54,8 +56,8 @@ export default function AdminDashboardPage() {
           Admin dashboard
         </h1>
         <p className='mt-2 max-w-2xl text-sm font-semibold text-indigo-950/80'>
-          Manage products, brands, and user accounts. Changes apply immediately
-          to the live marketplace catalog and access control.
+          Manage products, brands, orders, and user accounts. Order payment
+          status is controlled by Stripe; fulfillment status is managed here.
         </p>
       </div>
 
@@ -84,6 +86,7 @@ export default function AdminDashboardPage() {
 
       {activeTab === 'products' ? <AdminProductsPanel /> : null}
       {activeTab === 'brands' ? <AdminBrandsPanel /> : null}
+      {activeTab === 'orders' ? <AdminOrdersPanel /> : null}
       {activeTab === 'users' ? <AdminUsersPanel /> : null}
     </div>
   );

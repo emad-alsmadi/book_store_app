@@ -11,6 +11,7 @@ export const ADMIN_USERS_KEY = ['admin', 'users'] as const;
 export const ADMIN_COUPONS_KEY = ['admin', 'coupons'] as const;
 export const ADMIN_PRODUCTS_KEY = ['admin', 'products'] as const;
 export const ADMIN_BRANDS_KEY = ['admin', 'brands'] as const;
+export const ADMIN_ORDERS_KEY = ['admin', 'orders'] as const;
 
 export function useAdminUsers() {
   return useQuery({
@@ -41,6 +42,30 @@ export function useAdminBrands() {
     queryKey: ADMIN_BRANDS_KEY,
     queryFn: () => adminApi.getBrands(),
     staleTime: 30_000,
+  });
+}
+
+export function useAdminOrders(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}) {
+  return useQuery({
+    queryKey: [...ADMIN_ORDERS_KEY, params ?? {}] as const,
+    queryFn: () => adminApi.getOrders(params),
+    staleTime: 15_000,
+  });
+}
+
+export function useUpdateOrderStatusMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      adminApi.updateOrderStatus(id, status),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ADMIN_ORDERS_KEY });
+      await qc.invalidateQueries({ queryKey: ['orders'] });
+    },
   });
 }
 

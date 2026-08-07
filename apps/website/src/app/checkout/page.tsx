@@ -158,7 +158,7 @@ export default function CheckoutPage() {
       },
       // Server computes shipping/tax/discount — send intent flags + coupon only
       delivery: Boolean(values.delivery),
-      shippingMethod: values.delivery ? 'standard' : 'none',
+      shippingMethod: values.delivery ? ('standard' as const) : ('none' as const),
       couponCode: appliedCoupon?.code || undefined,
     };
 
