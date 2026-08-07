@@ -3,28 +3,10 @@
 import Link from 'next/link';
 import { ProductCard } from '@/components/products/ProductCard';
 import { getDemoBadgesForIndex } from '@/data/demoStorefront';
-
-type FeaturedProduct = {
-  _id: string;
-  title: string;
-  description: string;
-  price: number;
-  basePrice: number;
-  cover: string;
-  averageRating: number;
-  reviewCount: number;
-  category: string;
-  subcategory?: string;
-  brand?: {
-    name: string;
-    slug: string;
-    _id?: string;
-  };
-  stock?: number;
-};
+import type { Product } from '@/types';
 
 type Props = {
-  products: FeaturedProduct[];
+  products: Product[];
   loading?: boolean;
   error?: string | null;
 };

@@ -5,34 +5,40 @@ import { ShoppingCart, Star, Heart, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/lib/cartStore';
+import type { Brand, Product } from '@/types';
 
 export type ProductCardBadge = 'bestseller' | 'lowStock' | 'new';
 
+export type ProductCardProduct = Pick<
+  Product,
+  | '_id'
+  | 'title'
+  | 'description'
+  | 'price'
+  | 'basePrice'
+  | 'cover'
+  | 'averageRating'
+  | 'reviewCount'
+  | 'category'
+  | 'subcategory'
+  | 'brand'
+  | 'stock'
+>;
+
 interface ProductCardProps {
-  product: {
-    _id: string;
-    title: string;
-    description: string;
-    price: number;
-    basePrice: number;
-    cover: string;
-    averageRating: number;
-    reviewCount: number;
-    category: string;
-    subcategory?: string;
-    brand?: {
-      name: string;
-      slug: string;
-      _id?: string;
-    };
-    stock?: number;
-  };
+  product: ProductCardProduct;
   /** DEMO / future API merchandising flags */
   badges?: ProductCardBadge[];
 }
 
+function getBrandMeta(brand: Product['brand']): Brand | null {
+  if (!brand || typeof brand === 'string') return null;
+  return brand;
+}
+
 export function ProductCard({ product, badges = [] }: ProductCardProps) {
   const cart = useCart();
+  const brand = getBrandMeta(product.brand);
 
   const handleAddToCart = () => {
     cart.addToCart({
@@ -124,12 +130,12 @@ export function ProductCard({ product, badges = [] }: ProductCardProps) {
       </Link>
 
       <div className='p-4'>
-        {product.brand && (
+        {brand && (
           <Link
-            href={`/brands/${product.brand._id || product.brand.slug}`}
+            href={`/brands/${brand._id || brand.slug}`}
             className='text-xs text-gray-500 hover:text-fuchsia-600 transition-colors mb-1 block font-medium'
           >
-            {product.brand.name}
+            {brand.name}
           </Link>
         )}
 

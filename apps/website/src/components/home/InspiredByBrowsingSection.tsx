@@ -5,28 +5,10 @@ import Link from 'next/link';
 import { ProductCard } from '@/components/products/ProductCard';
 import { pickInspiredProducts } from '@/data/demoStorefront';
 import { getRecentlyViewed } from '@/lib/recentlyViewed';
-
-type InspiredProduct = {
-  _id: string;
-  title: string;
-  description: string;
-  price: number;
-  basePrice: number;
-  cover: string;
-  averageRating: number;
-  reviewCount: number;
-  category: string;
-  subcategory?: string;
-  brand?: {
-    name: string;
-    slug: string;
-    _id?: string;
-  };
-  stock?: number;
-};
+import type { Product } from '@/types';
 
 type Props = {
-  products: InspiredProduct[];
+  products: Product[];
   loading?: boolean;
 };
 
