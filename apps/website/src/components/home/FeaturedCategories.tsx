@@ -2,10 +2,17 @@
 
 import Link from 'next/link';
 import { DEMO_CATEGORY_SHORTCUTS } from '@/data/demoStorefront';
+import { useStorefrontCategories } from '@/hooks/storefront/categoriesQuery';
 
-/** Retail category tiles — DEMO labels; hrefs hit live catalog filters */
+/** Retail category tiles — live categories API with demo fallback */
 export function FeaturedCategories() {
-  const categories = DEMO_CATEGORY_SHORTCUTS.slice(0, 6).map((c, i) => ({
+  const q = useStorefrontCategories();
+  const source =
+    q.data && q.data.length > 0
+      ? q.data
+      : DEMO_CATEGORY_SHORTCUTS;
+
+  const categories = source.slice(0, 6).map((c, i) => ({
     name: c.name,
     count: c.countLabel,
     href: c.href,

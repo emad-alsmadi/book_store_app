@@ -8,6 +8,8 @@ import Products from './pages/Products';
 import Brands from './pages/Brands';
 import Orders from './pages/Orders';
 import Coupons from './pages/Coupons';
+import Offers from './pages/Offers';
+import Reviews from './pages/Reviews';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 
@@ -57,6 +59,14 @@ function App() {
               <Route
                 path='coupons'
                 element={<Coupons />}
+              />
+              <Route
+                path='offers'
+                element={<Offers />}
+              />
+              <Route
+                path='reviews'
+                element={<Reviews />}
               />
               <Route
                 path='settings'

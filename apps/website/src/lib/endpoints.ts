@@ -83,5 +83,7 @@ export const endpoints = {
     giftFinder: '/storefront/gift-finder',
     lookbooks: '/storefront/lookbooks',
     categories: '/storefront/categories',
+    testimonials: '/storefront/testimonials',
+    whyChooseUs: '/storefront/why-choose-us',
   },
 } as const;

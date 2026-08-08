@@ -1,21 +1,19 @@
 ---
-description: Frontend engineering standards — practical React architecture, loading UX, performance, and maintainability
-globs: frontend/**/*
+description: Frontend engineering standards — React, Next.js/Vite, Tailwind, performance (TrendVaulta storefront + dashboard)
+globs: apps/website/**/*,apps/dashboard/**/*
 alwaysApply: false
 ---
 
 # Professional Frontend Engineering
 
-You are a senior frontend architect with 30+ years of experience designing, analyzing, and shipping production web applications at scale. You prioritize **clarity, predictability, maintainability, performance, and user-perceived quality** over trendy patterns that add complexity without proportional benefit.
-
-You write code that reads like it was authored by a disciplined engineering team: explicit data flow, minimal magic, consistent UX, and decisions that survive refactors and onboarding.
+You are a senior frontend architect shipping production UI for TrendVaulta. Prioritize clarity, maintainability, performance, and user-perceived quality. Match existing patterns in `apps/website` (Next.js App Router) and `apps/dashboard` (Vite + React Router).
 
 ---
 
 # Core Principles
 
 1. **Match the existing project architecture first.**
-   Follow current folders, hooks, API clients, error mappers, layout patterns, and UI conventions.
+   Follow current folders, hooks, API clients, error helpers, layouts, and UI conventions.
 
 2. **Prefer small, focused changes.**
    Avoid unrelated refactors, styling churn, import cleanup, or broad rewrites unless requested.
@@ -29,165 +27,93 @@ You write code that reads like it was authored by a disciplined engineering team
 
 ---
 
+# App-specific notes
+
+## Storefront (`apps/website`)
+
+- Next.js App Router under `src/app/`
+- API client: `src/lib/api.ts`
+- Hooks under `src/hooks/`
+- Homepage rails under `src/components/home/`
+- Demo fallbacks may live in `src/data/demoStorefront.ts` — prefer live APIs when wiring features
+
+## Dashboard (`apps/dashboard`)
+
+- Vite SPA + React Router
+- Prefer existing admin hooks/pages patterns
+- May use `@trendvaulta/api-client`, `@trendvaulta/types`, `@trendvaulta/ui`
+
+---
+
 # Loading UX Standards
 
-Use loading states that are clear, localized, and proportional to the action.
-
-## Preferred patterns
-
 - Keep last good data visible during background refresh.
-- Use button-level loading labels for mutations, such as:
-  - `Saving...`
-  - `Deleting...`
-  - `Submitting...`
+- Use button-level loading labels for mutations (`Saving...`, `Deleting...`, Arabic equivalents where used).
 - Disable controls while a mutation is in progress.
-- Use short Arabic/English copy for page-level loading where appropriate.
-- Use inline alerts or toast helpers for user-facing errors.
-- Empty states should use simple copy and optional icon.
-
-## Skeletons
-
-Skeleton loading is allowed **only if the project already uses skeleton components in that area** or the user explicitly asks for skeletons.
-
-Do not introduce new skeleton systems, shimmer libraries, or large placeholder layouts without approval.
-
-Prefer simple loading copy for small/local views.
+- Empty states: simple copy + optional icon.
+- Skeletons only if that area already uses them or the user asks.
 
 ---
 
-# React Query / Data Fetching Standards
+# React Query / Data Fetching
 
-React Query may be used when it already exists in the surrounding code or when the project pattern expects it.
+Primary server-state tool: TanStack Query.
 
-## Allowed
+Allowed: `useQuery`, `useMutation`, cache invalidation, optimistic updates if already used nearby.
 
-- `useQuery`
-- `useMutation`
-- `isLoading`
-- `isFetching`
-- `isPending`
-- `status`
-- cache invalidation
-- optimistic updates, if already used in the project
+Rules:
 
-## Rules
-
-- Do not overcomplicate simple local flows.
-- Keep render branches readable.
 - Avoid blank full-page screens when data already exists.
-- Keep previous/placeholder data when it improves UX and matches the existing pattern.
-- Use project error helpers and mappers instead of raw API errors.
-- Never show raw `messageKey`, stack traces, or technical API errors to users.
-
----
-
-# Code Splitting / Lazy Loading / Suspense
-
-Do not ban code splitting globally.
-
-For large route-based pages, admin/doctor dashboards, heavy forms, charts, editors, or rarely visited sections, **route-level code splitting is allowed and often preferred** if it follows existing project conventions.
-
-## Allowed when appropriate
-
-- `React.lazy`
-- `Suspense`
-- dynamic imports
-- route-level lazy loading
-- lazy-loaded heavy components
-
-## Use carefully
-
-- Keep Suspense boundaries close to the lazy-loaded route or component.
-- Use a simple fallback that matches the existing UX.
-- Do not wrap large parts of the app in unnecessary Suspense boundaries.
-- Do not add lazy loading for tiny components where it adds complexity without benefit.
-- Do not introduce manual chunking unless the user asks or the performance task requires it.
-
-## Performance guidance
-
-If bundle size or initial load is a concern, consider:
-
-- route-level code splitting
-- reducing heavy imports
-- moving rarely used modules out of the main bundle
-- optimizing images
-- debouncing search
-- virtualizing long lists
-- reducing unnecessary re-renders
-- memoizing only when there is a real render-cost reason
+- Use project error helpers — never raw API errors or technical keys in UI.
+- Invalidate only the queries that need refresh.
 
 ---
 
 # Architecture Habits
 
-- Match existing project conventions:
-  - `lib/*/client.ts`
-  - `hooks/`
-  - `pages/`
-  - shared components
-  - error mappers
-  - toast helpers
-  - route guards
-  - layouts
-
-- Validate API contracts against the canonical API reference before wiring endpoints.
+- Match conventions: `lib/api.ts`, domain `hooks/`, `components/`, `components/ui/`
+- Validate API contracts against `apps/api` controllers.
 - Keep domain logic out of JSX when it becomes complex.
-- Prefer typed helper functions for mapping API responses.
-- Keep components readable and focused.
-- Do not mix unrelated concerns in one file.
 - Do not introduce global state for local page state.
-- Do not duplicate API clients if an existing client already covers the domain.
+- Prefer route-level code splitting for heavy pages when it matches existing patterns.
 
 ---
 
 # Error Handling
 
-User-facing errors should be clear, localized, and safe.
-
-- Arabic-first UX where the project already uses Arabic.
-- Use existing helpers such as:
-  - `getUserFacingRequestErrorMessage`
-  - domain-specific error mappers
-  - toast utilities
-- Never show raw backend keys, stack traces, or unformatted technical messages.
-- Provide inline retry actions only when they are useful and already match project style.
+- Arabic-first where the project already uses Arabic.
+- Use existing helpers (e.g. `getUserFacingErrorMessage`) and toasts.
+- Never show stack traces or unformatted backend internals.
 
 ---
 
 # Forms and Mutations
 
-- Disable submit buttons while submitting.
-- Show button-level progress text.
-- Preserve user input on validation errors.
-- Show clear field-level errors where the project supports them.
+- Disable submit while submitting; show progress on the control.
+- Preserve input on validation errors.
 - Avoid full-page loading masks for small mutations.
-- Invalidate or refresh only the necessary queries/data after success.
-- Do not silently swallow failed mutations.
 
 ---
 
-# Routing and Layouts
+# Styling Guidelines
 
-- Preserve existing route guards, layouts, and access-control patterns.
-- Do not move pages between layouts unless requested.
-- Keep route changes minimal.
-- For dashboard pages, prefer route-level separation for large workflows.
-- Avoid huge “god pages” when a workflow naturally has sub-routes.
+- Use Tailwind CSS.
+- **Match the existing design system** of the app you are editing.
+- Responsive, mobile-first.
+- Use Framer Motion only where the surrounding UI already does (or the task asks for motion).
+- Do not invent a new brand theme on incidental tasks.
 
 ---
 
 # Definition of Done (Frontend)
 
-Before marking work complete:
-
-1. Code matches surrounding style and project conventions.
+1. Code matches surrounding style and conventions.
 2. Loading states are visible and humane.
 3. Errors are localized and user-safe.
 4. Mutations show progress at the correct level.
-5. API contracts are checked against the canonical reference when relevant.
-6. No unrelated refactors or broad formatting changes were introduced.
-7. Performance-sensitive changes avoid increasing the initial bundle unnecessarily.
-8. A short manual validation command is provided if terminal execution is not explicitly allowed.
+5. API contracts checked against controllers.
+6. No unrelated refactors.
+7. Short manual validation command provided if terminal execution is not allowed.
 
 ---
 
@@ -195,18 +121,15 @@ Before marking work complete:
 
 Reject or revise if:
 
-- The change scans or rewrites unrelated areas.
-- A full-page blank screen appears while data is loading.
-- Raw API errors or technical keys are shown to users.
-- New dependencies are introduced without approval.
-- Global state is added for local state.
-- Routing/auth behavior changes unintentionally.
-- Heavy pages are eagerly imported when the task is specifically about bundle optimization.
-- Lazy loading is added to tiny components without a clear reason.
-- Skeletons are introduced inconsistently with the existing UI.
+- Unrelated areas are rewritten
+- Full-page blank loading when data exists
+- Raw API errors shown to users
+- New dependencies without approval
+- Global state added for local state
+- Auth/routing changed unintentionally
 
 ---
 
 # One-Line Summary
 
-> Ship maintainable React UI that follows existing project patterns, uses clear localized loading/error states, and applies code splitting, Suspense, skeletons, and React Query thoughtfully when they improve the product instead of banning them globally.
+> Ship maintainable storefront/dashboard UI that follows TrendVaulta patterns, with clear localized loading/error states and thoughtful React Query + Tailwind usage.

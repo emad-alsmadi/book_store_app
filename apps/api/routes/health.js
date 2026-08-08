@@ -5,9 +5,9 @@ const router = express.Router();
 
 /**
  * Liveness — no DB required.
- * @route GET /api/health
+ * @route GET /api/trendvaulta
  */
-router.get('/health', (_req, res) => {
+router.get('/trendvaulta', (_req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'trendvaulta-api',

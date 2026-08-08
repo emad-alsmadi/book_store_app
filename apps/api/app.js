@@ -51,7 +51,7 @@ app.use('/api/', require('./routes/storefrontCategories'));
 app.use('/api/', require('./routes/storefrontTestimonials'));
 app.use('/api/', require('./routes/storefrontWhyChooseUs'));
 app.use('/api/', require('./routes/adminStats'));
-app.use('/api/', require('./routes/health'));
+app.use('/api/', require('./routes/trendvaulta'));
 
 // Friendly roots (this process is API-only; the Next.js app is a separate server)
 app.get('/', (req, res) => {

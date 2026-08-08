@@ -1,5 +1,5 @@
 ---
-description: Token/RAM discipline — scope, search limits, terminal policy, commit message policy, one task per session (Craftify Templates Marketplace)
+description: Token/RAM discipline — scope, search limits, terminal policy, commit message policy, one task per session (TrendVaulta)
 alwaysApply: true
 ---
 
@@ -18,11 +18,11 @@ alwaysApply: true
    Prefer opening specific sections instead of entire files.
 
 4. **API lookup order**
-   - Check backend controller files in `apps/api/controllers/`
    - Check route definitions in `apps/api/routes/`
-   - Check frontend API client in `apps/website/src/lib/api.ts`
-   - Never read deprecated files or unrelated documentation unless requested.
+   - Check controllers in `apps/api/controllers/`
    - Check Mongoose models in `apps/api/models/`
+   - Check storefront client `apps/website/src/lib/api.ts` or dashboard `apps/dashboard/src/lib/api.ts`
+   - Never read LMJ Health / API-3 extracts (not part of this repo)
 
 5. **No unnecessary exploration.**
    Do not use Explore Mode, Task Mode, or sub-agents for simple or localized tasks.
@@ -51,56 +51,25 @@ alwaysApply: true
 
 ## By default
 
-Do NOT execute terminal commands.
-
-Do NOT run:
-
-- npm
-- npx
-- pnpm
-- yarn
-- bun
-- tsc
-- eslint
-- prettier
-- vite
-- build
-- test
-- playwright
-- cypress
-- git
-- docker
-- bash
-- powershell
-- any shell command
-
-unless the user explicitly requests it.
-
----
+Do NOT execute terminal commands (npm, npx, pnpm, yarn, bun, tsc, eslint, prettier, vite, build, test, playwright, cypress, git, docker, bash, powershell, or any shell command) unless the user explicitly requests it.
 
 ## After finishing code changes
 
-Instead of executing terminal commands:
+Provide only a short manual validation command. Do NOT execute it.
 
-Provide only a short manual validation command.
-
-Example:
-
-Validation command:
+Examples:
 
 ```bash
-# من:
-npx tsc --noEmit
-
-# إلى:
 cd apps/website && npx tsc --noEmit
 ```
 
-Do NOT execute it.
+```bash
+cd apps/dashboard && npx tsc --noEmit
+```
 
-The user will run it manually.
-
----
+```bash
+cd apps/api && npm test
+```
 
 ## If validation is required
 
@@ -119,9 +88,6 @@ After any completed code change, bug fix, refactor, or feature addition:
 - Do NOT run `git commit`.
 - Do NOT run any git command.
 - Provide one short English commit message only.
-- Keep it concise and conventional.
-- Do not include long explanations.
-- Do not include multiple commit options unless the user asks.
 
 Format:
 
@@ -130,18 +96,21 @@ Suggested commit:
 fix(scope): short description
 ```
 
-Suggested commit:
-fix(license): fix price calculation for extended license
-
-Suggested commit:
-feat(license): add license selection component
-
-Suggested commit:
-refactor(api): simplify payment verification logic
+Examples:
 
 ```text
 Suggested commit:
-refactor(auth): simplify protected route handling
+feat(storefront): wire deals rail to offers API
+```
+
+```text
+Suggested commit:
+fix(api): fail-soft order confirmation email on paid
+```
+
+```text
+Suggested commit:
+refactor(dashboard): align reviews UI with admin reviews API
 ```
 
 ---
@@ -161,25 +130,12 @@ Keep this section under 5 lines.
 
 # Vague Continuations
 
-If the user says:
+If the user says continue / yes / next / ابدأ / كمل / الخطوة التالية:
 
-- continue
-- yes
-- next
-- ابدأ
-- كمل
-- الخطوة التالية
+- ask one short clarification, **or**
+- continue only with the next unchecked item from the current task context
 
-Do NOT resume the entire backlog.
-
-Instead:
-
-- ask one short clarification
-
-OR
-
-
-- continue only with the next unchecked item from the current task context.
+Do NOT resume an entire backlog.
 
 ---
 
@@ -194,7 +150,7 @@ Goal:
 [one sentence]
 
 Source:
-controller/route reference
+[controller/route reference]
 
 Constraints:
 - no repository scan
@@ -215,7 +171,6 @@ Success:
 - Read only the required sections.
 - Avoid reopening files already inspected.
 - Never reload large files unless necessary.
-- Never reload API documentation already used.
 - Keep memory focused on the active task only.
 
 ---
@@ -235,8 +190,6 @@ Success:
 
 Keep the final response short.
 
-Use this format:
-
 Changed:
 - one or two bullet points
 
@@ -246,7 +199,7 @@ Files:
 Validation command:
 
 ```bash
-npx tsc --noEmit
+cd apps/website && npx tsc --noEmit
 ```
 
 Suggested commit:
@@ -270,4 +223,4 @@ Do not include long explanations unless requested.
 - Keep technical implementation in English.
 - Do not translate code.
 - Preserve existing localization patterns.
-- The project uses purple-indigo-cyan gradient theme with glassmorphism effects.
+- Match the existing visual system of the app being edited (do not invent a new theme).

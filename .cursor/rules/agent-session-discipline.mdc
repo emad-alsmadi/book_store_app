@@ -1,5 +1,5 @@
 ---
-description: Token/RAM discipline — scope, search limits, terminal policy, commit message policy, one task per session (LMJ Health)
+description: Token/RAM discipline — scope, search limits, terminal policy, commit message policy, one task per session (TrendVaulta)
 alwaysApply: true
 ---
 
@@ -18,9 +18,11 @@ alwaysApply: true
    Prefer opening specific sections instead of entire files.
 
 4. **API lookup order**
-   - `api3_endpoint_index.txt`
-   - Read only the matching endpoint section from `api_latest_extracted.txt`
-   - Never read deprecated API extracts or long audit reports unless requested.
+   - Check `apps/api/routes/` for the endpoint
+   - Read the matching controller in `apps/api/controllers/`
+   - Confirm models/validators in `apps/api/models/` when needed
+   - Mirror clients/hooks in `apps/website` or `apps/dashboard`
+   - Never use LMJ Health / API-3 extracts (they do not belong to this repo)
 
 5. **No unnecessary exploration.**
    Do not use Explore Mode, Task Mode, or sub-agents for simple or localized tasks.
@@ -51,50 +53,29 @@ alwaysApply: true
 
 Do NOT execute terminal commands.
 
-Do NOT run:
-
-- npm
-- npx
-- pnpm
-- yarn
-- bun
-- tsc
-- eslint
-- prettier
-- vite
-- build
-- test
-- playwright
-- cypress
-- git
-- docker
-- bash
-- powershell
-- any shell command
-
-unless the user explicitly requests it.
-
----
+Do NOT run npm, npx, pnpm, yarn, bun, tsc, eslint, prettier, vite, build, test, playwright, cypress, git, docker, bash, powershell, or any shell command unless the user explicitly requests it.
 
 ## After finishing code changes
 
-Instead of executing terminal commands:
-
-Provide only a short manual validation command.
+Provide only a short manual validation command. Do NOT execute it.
 
 Example:
 
-Validation command:
-
 ```bash
-npx tsc --noEmit
+cd apps/website && npx tsc --noEmit
 ```
 
-Do NOT execute it.
+Dashboard example:
 
-The user will run it manually.
+```bash
+cd apps/dashboard && npx tsc --noEmit
+```
 
----
+API example:
+
+```bash
+cd apps/api && npm test
+```
 
 ## If validation is required
 
@@ -108,14 +89,10 @@ Do not assume permission.
 
 # Commit Message Policy
 
-After any completed code change, bug fix, refactor, or feature addition:
+After any completed code change:
 
-- Do NOT run `git commit`.
-- Do NOT run any git command.
-- Provide one short English commit message only.
-- Keep it concise and conventional.
-- Do not include long explanations.
-- Do not include multiple commit options unless the user asks.
+- Do NOT run `git commit` or any git command.
+- Provide one short English conventional commit suggestion only.
 
 Format:
 
@@ -128,17 +105,17 @@ Examples:
 
 ```text
 Suggested commit:
-fix(admin): align content edit dialog with update endpoint
+fix(checkout): improve Stripe error handling for users
 ```
 
 ```text
 Suggested commit:
-feat(doctor): add encounter order manual entry flow
+feat(storefront): wire deals rail to offers API
 ```
 
 ```text
 Suggested commit:
-refactor(auth): simplify protected route handling
+refactor(api): simplify mark-order-paid side effects
 ```
 
 ---
@@ -158,24 +135,12 @@ Keep this section under 5 lines.
 
 # Vague Continuations
 
-If the user says:
+If the user says continue / yes / next / ابدأ / كمل / الخطوة التالية:
 
-- continue
-- yes
-- next
-- ابدأ
-- كمل
-- الخطوة التالية
+- ask one short clarification, **or**
+- continue only with the next unchecked item from the current task context
 
-Do NOT resume the entire backlog.
-
-Instead:
-
-- ask one short clarification
-
-OR
-
-- continue only with the next unchecked item from `.cursor/CURSOR_SESSION_BACKLOG.md`.
+Do NOT resume an entire backlog document.
 
 ---
 
@@ -190,7 +155,7 @@ Goal:
 [one sentence]
 
 Source:
-api_latest_extracted — [METHOD path]
+[controller/route reference]
 
 Constraints:
 - no repository scan
@@ -211,7 +176,6 @@ Success:
 - Read only the required sections.
 - Avoid reopening files already inspected.
 - Never reload large files unless necessary.
-- Never reload API documentation already used.
 - Keep memory focused on the active task only.
 
 ---
@@ -242,7 +206,7 @@ Files:
 Validation command:
 
 ```bash
-npx tsc --noEmit
+cd apps/website && npx tsc --noEmit
 ```
 
 Suggested commit:

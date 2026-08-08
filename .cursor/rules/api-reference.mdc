@@ -1,70 +1,81 @@
 ---
-description: Canonical LMJ Health Backend API (API-3) reference for frontend integration
+description: TrendVaulta Backend API reference for storefront and dashboard integration
 alwaysApply: true
 ---
 
-# LMJ Health API — API-3 only
+# TrendVaulta API — look up routes in the repo
 
-Use this rule when wiring endpoints, verifying contracts, or reviewing API behavior. **Do not guess paths** — look them up in the repo extracts.
+Use this rule when wiring endpoints, verifying contracts, or reviewing API behavior. **Do not guess paths** — look them up in `apps/api/routes/` and the matching controller.
+
+There is **no** LMJ Health / API-3 extract in this repo. Do not search for `api_latest_extracted.txt`, `api3_endpoint_index.txt`, or `frontend/src/lib/.../endpoints.ts`.
 
 ## Files in this repo (sole sources)
 
-| File | Role |
-|------|------|
-| `api_latest_extracted.txt` | **Full API-3 extract** — from API (1)-3.pdf, v**2026.05.10** (~11k lines). **Only** canonical body text. |
-| `api3_endpoint_index.txt` | **Quick index** — ~330 `METHOD path` patterns; **grep here first**. |
-| `api_extracted_manifest.json` | Version metadata (`2026.05.10`) and search tips only — not endpoint detail. |
-
-There is **no** `api3_extracted.txt`, `api2_extracted.txt`, `api4_extracted.txt`, or `api3_vs_api2_delta.txt` in the repo. Do not reference or search for them.
+| Location | Role |
+|---|---|
+| `apps/api/routes/` | Express route definitions + middleware |
+| `apps/api/controllers/` | Business logic and response contracts |
+| `apps/api/models/` | Mongoose schemas + Joi validators |
+| `apps/api/app.js` | Route mounts, Stripe webhook, CORS |
+| `apps/website/src/lib/api.ts` | Storefront HTTP client |
+| `apps/dashboard/src/lib/api.ts` | Dashboard HTTP client |
+| `packages/api-client/` | Shared client (used by dashboard) |
 
 ## Lookup workflow (token-efficient)
 
-1. Search `api3_endpoint_index.txt` first using Cursor search.
-   Use scoped grep only if terminal execution is explicitly allowed.
-2. **Read only the matching section** in `api_latest_extracted.txt` (offset/limit from grep line number). Never load the full file.
-3. Confirm from that section: **auth role**, **query/body**, **response shape**, **status codes**, **`messageKey` errors**, legacy aliases.
-4. Match **existing frontend** patterns: `frontend/src/lib/<domain>/endpoints.ts`, `client.ts`, hooks under `frontend/src/hooks/`.
-
-## Extract format
-
-Prose sections (not OpenAPI). Per endpoint: `METHOD path`, description, auth, params, body, response, notes.
-
-- Machine table near end: search `Method Path Role Summary` in `api_latest_extracted.txt`.
-- Global rules: search `Frontend Integration Guide` once per feature area.
+1. Search `apps/api/routes/` for the path/method.
+2. Read only the matching controller section for auth, body/query, status codes, and response shape.
+3. Check the model for field types and validation.
+4. Mirror existing frontend patterns in `apps/website/src/hooks/` or `apps/dashboard/src/hooks/`.
 
 ## Path prefixes
 
-- **Frontend** uses `/api/...` in `endpoints.ts`.
-- **Extract** may omit `/api` (e.g. `GET /doctors/internal/directory`). Follow sibling `endpoints.ts` entries and verify the exact path in the extract.
+- Backend mounts under `/api/` (see `app.js`).
+- Storefront/dashboard call the API via their `api.ts` clients (and Vite proxy `/api` → `http://localhost:3000` on dashboard).
+- Stripe webhook: `POST /api/webhooks/stripe` (raw body) in `app.js`.
 
 ## Response & error contract
 
-- **Success:** `{ messageKey, message, ...endpointFields }` — no universal `data` wrapper.
-- **Error:** `{ status, messageKey, message, errors? }` — branch on **`messageKey`**, not localized `message`.
-- Headers: `Authorization: Bearer <accessToken>`, usually `x-lang: en|ar`.
-- Validation: **400** or **422** with `errors[]`.
-- Lists: `page`, `limit`, `total`, `results` (some patient lists use `pageInfo`).
-- Binary/PDF: not JSON envelopes; exports may use `{ downloadUrl }` vs raw stream.
-
-User-facing copy: Arabic via `getUserFacingRequestErrorMessage` and domain mappers — never raw `messageKey` in UI.
+- Prefer confirming per controller; common shape is `{ message, data?, errors? }` or direct payload + `message`.
+- Auth: `Authorization: Bearer <token>` via `verfiyToken` (existing spelling).
+- Validation: Joi in models/controllers — typically **400** with message/`errors`.
+- Lists: check controller for `page` / `limit` / `total` / results array naming.
+- User-facing copy: Arabic-first where helpers already exist — never show raw internal codes in UI.
 
 ## Integration checklist
 
-- [ ] Index hit + section read in `api_latest_extracted.txt`
-- [ ] Auth role matches screen (patient / doctor / secretary / admin)
-- [ ] Request shape including `clientType` on auth token flows
-- [ ] `messageKey` errors handled or mapped
-- [ ] Path in correct `frontend/src/lib/<domain>/endpoints.ts`
-- [ ] Client/hook mirrors siblings in same domain
+- [ ] Route exists in `apps/api/routes/` and is mounted in `app.js`
+- [ ] Controller auth role matches the screen (public / user / admin permissions)
+- [ ] Request/response shape matches controller
+- [ ] Storefront or dashboard client + React Query hook updated
+- [ ] Loading and safe error UX match surrounding screens
+
+## Key domain areas
+
+| Area | Routes (examples) | Notes |
+|---|---|---|
+| **Auth / profile** | `/api/auth/*`, `/api/profile`, `/api/password/*` | JWT login/register/reset |
+| **Products** | `/api/products/*` | Catalog, badges, sort (e.g. bestselling) |
+| **Brands** | `/api/brands/*` | Featured brands supported |
+| **Orders** | `/api/orders/*` | Create, my orders, admin |
+| **Payments** | `/api/payments/*`, webhook | Stripe checkout + paid marking |
+| **Wishlist** | `/api/wishlist/*` | Auth user wishlist |
+| **Reviews** | `/api/reviews/*` | User + admin review management |
+| **Coupons / offers** | `/api/coupons/*`, `/api/offers/*` | Promotions |
+| **Recommendations / bundles** | `/api/recommendations/*`, `/api/bundles/*` | Storefront rails |
+| **Recently viewed** | `/api/recently-viewed` (confirm path in routes) | Sync browsing history |
+| **Gift finder / lookbooks** | gift-finder, lookbooks routes | Discovery content |
+| **Storefront content** | trust, categories, testimonials, why-choose-us | Homepage content APIs |
+| **Admin stats** | `/api/admin/...` stats routes | Dashboard home metrics |
+| **Health** | `/api/health`, `/api/ready` when mounted | Ops / Render readiness |
 
 ## Domain traps
 
 | Topic | Rule |
-|-------|------|
-| **Complaints** | `POST /api/complaints` is **patient-only**. Doctors: CMS `contact-us` / documented alternatives. |
-| **Doctor directory (staff)** | `GET .../doctors/internal/directory` — doctor/secretary, **not** admin doctors list. |
-| **CMS / legal / footer** | `GET /api/content?type=SETTINGS_PAGE`, `GET /api/content/:slug`. |
-| **Doctor account lifecycle (API-3)** | Self-deletion, OTP recovery, restore requests, admin reboarding — see extract changelog on page 1. |
-| **Facilities** | Doctor-owned vs admin CRUD vs catalog suggest/link — read Facilities module before wiring `me/facility`. |
-| **Appointment snapshots** | Historical type/name/price from **appointment snapshot fields**, not live appointment-type records. |
-| **Templates** | `POST .../templates/:id/apply` returns hydrated draft only — does not mutate encounter records. |
+|---|---|
+| **Not templates** | Catalog is **products/brands**, not digital templates/creators. |
+| **Ports** | API **3000**, website **3001**, dashboard **3002**. |
+| **Package manager** | **npm** workspaces — not pnpm. |
+| **Demo fallbacks** | Storefront may fall back to `apps/website/src/data/demoStorefront.ts` when APIs fail; prefer live APIs when wiring new rails. |
+| **Permissions** | Admin actions use role/permission helpers (e.g. `rolePermissions.js`) — check before adding admin CRUD. |
+| **Stripe** | Paid side-effects (salesCount, confirmation email) live in payment/order paid flows — read those controllers before changing checkout. |

@@ -1,13 +1,15 @@
 ---
-description: Backend engineering standards — Express.js, Mongoose, API design, security, and best practices
+description: Backend engineering standards — TrendVaulta Express.js API, Mongoose, Stripe, security
 globs: apps/api/**/*
 alwaysApply: false
 trigger: manual
 ---
 
-# Professional Backend Engineering
+# Professional Backend Engineering (TrendVaulta)
 
-You are a senior backend architect with 30+ years of experience designing, analyzing, and shipping production web applications at scale. You prioritize **security, scalability, maintainability, performance, and reliability** over quick hacks that introduce technical debt.
+You are a senior backend architect for the TrendVaulta retail e-commerce API (`apps/api`). Prioritize **security, scalability, maintainability, performance, and reliability** over quick hacks that introduce technical debt.
+
+Domain: **products, brands, orders, payments (Stripe), wishlist, reviews, coupons/offers, storefront content**, not digital templates.
 
 You write code that reads like it was authored by a disciplined engineering team: explicit error handling, consistent patterns, proper validation, and decisions that survive production loads.
 
@@ -220,12 +222,14 @@ res.status(200).json({
 ```
 apps/api/
 ├── controllers/     # Route controllers
-├── models/         # Mongoose models
-├── routes/         # Express routes
-├── middlewares/    # Custom middleware
-├── config/         # Configuration files
-├── utils/          # Utility functions
-└── app.js          # Main application file
+├── models/          # Mongoose models
+├── routes/          # Express routes
+├── middlewares/     # Auth, CORS, logging
+├── config/          # DB and app config
+├── utils/           # Mail, helpers
+├── seeders/         # Seed scripts
+├── services/        # External integrations (when present)
+└── app.js           # Mounts, Stripe webhook, listen (default port 3000)
 ```
 
 ---

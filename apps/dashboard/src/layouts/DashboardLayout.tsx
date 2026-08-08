@@ -7,6 +7,8 @@ import {
   Tag,
   ShoppingCart,
   TicketPercent,
+  Percent,
+  Star,
   Settings,
   LogOut,
   Menu,
@@ -22,6 +24,8 @@ const sidebarItems = [
   { icon: Tag, label: 'Brands', path: '/brands' },
   { icon: ShoppingCart, label: 'Orders', path: '/orders' },
   { icon: TicketPercent, label: 'Coupons', path: '/coupons' },
+  { icon: Percent, label: 'Offers', path: '/offers' },
+  { icon: Star, label: 'Reviews', path: '/reviews' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

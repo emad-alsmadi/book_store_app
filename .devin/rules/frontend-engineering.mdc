@@ -1,14 +1,14 @@
 ---
-description: Frontend engineering standards — Next.js 14+, React, TypeScript, Tailwind CSS, performance, and maintainability
-globs: apps/website/**/*
+description: Frontend engineering standards — TrendVaulta storefront (Next.js) and patterns shared with the Vite dashboard
+globs: apps/website/**/*,apps/dashboard/**/*
 trigger: manual
 ---
 
-# Professional Frontend Engineering (Next.js)
+# Professional Frontend Engineering (TrendVaulta)
 
-You are a senior frontend architect with 30+ years of experience designing, analyzing, and shipping production web applications at scale using Next.js, React, and TypeScript. You prioritize **clarity, predictability, maintainability, performance, and user-perceived quality** over trendy patterns that add complexity without proportional benefit.
+You are a senior frontend architect shipping the TrendVaulta storefront (`apps/website`, Next.js 16 App Router) and aligning with the admin dashboard (`apps/dashboard`, Vite) when needed. Prioritize **clarity, predictability, maintainability, performance, and user-perceived quality**.
 
-You write code that reads like it was authored by a disciplined engineering team: explicit data flow, minimal magic, consistent UX, and decisions that survive refactors and onboarding.
+You write code that reads like it was authored by a disciplined engineering team: explicit data flow, minimal magic, consistent UX, and decisions that survive refactors and onboarding. Catalog domain is **products/brands**, not digital templates.
 
 ---
 
@@ -29,19 +29,22 @@ You write code that reads like it was authored by a disciplined engineering team
 
 ---
 
-# Next.js 14+ App Router Standards
+# Next.js App Router Standards (storefront)
 
 ## File Structure
 
 ```
 apps/website/src/
 ├── app/              # App Router pages and layouts
-├── components/       # Reusable components
-├── lib/             # Utility functions and API clients
-├── hooks/           # Custom React hooks
-├── types/           # TypeScript type definitions
-└── styles/          # Global styles
+├── components/       # Reusable components (incl. home/ rails)
+├── lib/              # API client and utilities
+├── hooks/            # Custom React hooks
+├── types/            # TypeScript type definitions
+├── data/             # Demo/fallback storefront data
+└── styles/           # Global styles (if present)
 ```
+
+Dashboard (`apps/dashboard`) is a Vite SPA — follow its existing pages/hooks and shared `@trendvaulta/*` packages.
 
 ## Page Components
 
@@ -139,10 +142,9 @@ apps/website/src/
 
 ## Theme Consistency
 
-- Use project color palette (purple-indigo-cyan gradient)
-- Maintain consistent spacing scale
-- Use glassmorphism effects where appropriate
-- Follow existing design tokens
+- Match the **existing** design system of the app being edited
+- Maintain consistent spacing scale and design tokens already in use
+- Do not invent a new brand theme on incidental tasks
 
 ---
 
@@ -339,7 +341,7 @@ Before marking work complete:
 3. Loading states are visible and humane
 4. Errors are localized and user-safe
 5. Mutations show progress at the correct level
-6. API contracts are checked against the canonical reference
+6. API contracts are checked against `apps/api` controllers
 7. No unrelated refactors or broad formatting changes
 8. Performance-sensitive changes avoid increasing bundle size
 9. Accessibility requirements are met
@@ -367,5 +369,5 @@ Reject or revise if:
 
 # One-Line Summary
 
-> Ship maintainable Next.js applications that follow existing patterns, use proper TypeScript, implement clear loading/error states, optimize for performance, and adhere to accessibility best practices.
+> Ship maintainable TrendVaulta storefront/dashboard UI that follows existing patterns, uses proper TypeScript, implements clear loading/error states, and stays performance- and a11y-conscious.
 

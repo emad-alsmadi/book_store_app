@@ -1,79 +1,93 @@
-# Craftify Templates Marketplace - Cursor AI Rules
+# TrendVaulta - Cursor AI Rules
 
 ## Project Overview
-Craftify Templates Marketplace is a monorepo e-commerce application for buying and selling digital templates with Next.js 14+ frontend and Express.js backend.
+TrendVaulta is a monorepo retail e-commerce platform for beauty, fashion, and lifestyle products. It includes a Next.js storefront, a Vite admin dashboard, and an Express.js API with MongoDB and Stripe.
 
 ## Tech Stack
-- **Frontend**: Next.js 14+ (App Router), TypeScript, React Query, Zustand, Tailwind CSS, Framer Motion
-- **Backend**: Express.js, Node.js, MongoDB, Mongoose, Stripe
-- **Package Manager**: pnpm (monorepo workspace)
+- **Storefront** (`apps/website`): Next.js 16 (App Router), React 19, TypeScript, React Query, Zustand, Tailwind CSS, Framer Motion
+- **Dashboard** (`apps/dashboard`): Vite + React 19, TypeScript, React Query, Zustand, Tailwind CSS, React Router
+- **Backend** (`apps/api`): Express.js, Node.js, MongoDB, Mongoose, Stripe, Nodemailer
+- **Shared packages** (`packages/`): `@trendvaulta/types`, `@trendvaulta/api-client`, `@trendvaulta/ui`
+- **Package Manager**: npm workspaces (root `package.json`)
 
 ## Monorepo Structure
 ```
-craftify-templates-marketplac/
+trendvaulta/
 ├── apps/
-│   ├── api/          # Express.js backend (port 3001)
-│   └── website/      # Next.js frontend (port 3000)
-├── packages/         # Shared packages
+│   ├── api/          # Express.js backend (port 3000)
+│   ├── website/      # Next.js storefront (port 3001)
+│   └── dashboard/    # Vite admin dashboard (port 3002)
+├── packages/
+│   ├── types/
+│   ├── api-client/
+│   └── ui/
+└── docs/             # Audits, gap analysis, backlog notes
 ```
 
 ## File Structure
-- **Frontend** (`apps/website/src/`):
-  - `app/` - Next.js App Router pages
-  - `components/` - Reusable UI components
-  - `components/ui/` - Base UI components
-  - `lib/` - API clients, utilities, types
-  - `hooks/` - Custom React hooks by domain
-  - `types/` - TypeScript definitions
+- **Storefront** (`apps/website/src/`):
+  - `app/` — Next.js App Router pages
+  - `components/` — Reusable UI (including `home/` storefront rails)
+  - `components/ui/` — Base UI primitives
+  - `lib/` — API client, utilities
+  - `hooks/` — React Query hooks by domain
+  - `types/` — TypeScript definitions
+  - `data/` — Demo/fallback storefront data when APIs are unavailable
+
+- **Dashboard** (`apps/dashboard/src/`):
+  - Vite SPA pages/hooks for admin catalog, orders, users, settings
 
 - **Backend** (`apps/api/`):
-  - `controllers/` - Route controllers
-  - `models/` - Mongoose models
-  - `routes/` - Express routes
-  - `middlewares/` - Custom middleware
-  - `services/` - External integrations (Stripe)
+  - `controllers/` — Route controllers
+  - `models/` — Mongoose models
+  - `routes/` — Express routes
+  - `middlewares/` — Auth, CORS, validation helpers
+  - `services/` / `utils/` — Stripe, mail, helpers
+  - `seeders/` — Seed scripts
 
 ## API Integration
-- Frontend uses `lib/api.ts` for all API calls
-- Backend routes in `apps/api/routes/`
-- Controllers in `apps/api/controllers/`
-- JWT authentication via `verfiyToken` middleware
-- Response format: `{ message, data?, errors? }`
+- Storefront: `apps/website/src/lib/api.ts` (+ domain hooks)
+- Dashboard: `apps/dashboard/src/lib/api.ts` and/or `@trendvaulta/api-client`
+- Backend routes under `apps/api/routes/`, mounted in `apps/api/app.js`
+- JWT via `verfiyToken` middleware (note existing spelling)
+- Typical response shape: `{ message, data?, errors? }` (confirm per controller)
+
+## Domain (not templates)
+Primary catalog resources are **products** and **brands**, plus orders, payments, wishlist, reviews, coupons, offers, recommendations, bundles, recently-viewed, gift-finder, lookbooks, and storefront content endpoints.
 
 ## Styling
-- Tailwind CSS with purple-indigo-cyan gradient theme
-- Glassmorphism effects (backdrop-blur, transparency)
-- Framer Motion for animations
-- Custom scrollbars matching brand identity
+- Match the **existing** storefront/dashboard design system in each app
+- Tailwind CSS; Framer Motion where already used
 - Mobile-first responsive design
+- Do not invent a new visual theme unless the task is explicitly a redesign
 
 ## Key Features
-- User authentication (JWT)
-- Template browsing & search
-- Wishlist management
-- Reviews & ratings (1-5 stars)
-- Shopping cart
-- Stripe payments
-- Order management
-- Creator profiles
+- JWT auth (login, register, password reset)
+- Product browsing, search, badges, sorting (e.g. bestselling)
+- Brands (including featured)
+- Cart, wishlist, checkout (Stripe)
+- Orders and admin management
+- Reviews & ratings
+- Coupons / offers
+- Storefront rails (deals, recommendations, lookbooks, trust, testimonials, etc.)
+- Admin dashboard (products, brands, orders, users, coupons, offers, reviews, stats)
 
 ## Code Style
 - Functional components with hooks
-- TypeScript for type safety
-- camelCase for variables, PascalCase for components
-- Async/await for async operations
-- Small, focused components
-- Clean, maintainable code
+- TypeScript on website/dashboard
+- camelCase variables, PascalCase components
+- Async/await
+- Small, focused changes matching local patterns
 
 ## Git Workflow
 - Conventional commits: `feat:`, `fix:`, `refactor:`
 - Atomic, focused commits
-- Clear commit messages
+- Agents: suggest commit message only unless user explicitly asks to commit
 
 ## Important Notes
-- Backend runs on port 3001
-- Frontend runs on port 3000
-- Restart backend after adding new routes
-- Use React Query for data fetching
-- Handle errors gracefully with user-friendly messages
-- Arabic-first UX where applicable
+- API default port **3000** (`PORT` env override)
+- Website **3001**, dashboard **3002**
+- Restart API after adding new routes
+- Use React Query for server state
+- Arabic-first UX where the project already uses Arabic
+- User-facing errors must be safe/localized — never raw stack traces or internal keys

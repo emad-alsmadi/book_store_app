@@ -144,6 +144,35 @@ export const adminOrdersApi = {
   },
 };
 
+export type AdminStatsStatusCounts = {
+  pending: number;
+  paid: number;
+  shipped: number;
+  delivered: number;
+  canceled: number;
+};
+
+export type AdminStats = {
+  users: number;
+  products: number;
+  brands: number;
+  orders: number;
+  paidRevenue: number;
+  statusCounts: AdminStatsStatusCounts;
+};
+
+export type AdminStatsResponse = {
+  message?: string;
+  data: AdminStats;
+};
+
+export const adminStatsApi = {
+  getStats: async (): Promise<AdminStats> => {
+    const { data } = await api.get<AdminStatsResponse>('/admin/stats');
+    return data.data;
+  },
+};
+
 export type AdminBrand = {
   _id: string;
   name: string;
@@ -352,6 +381,91 @@ export const adminCouponsApi = {
 
   deleteCoupon: async (id: string): Promise<{ message: string }> => {
     const { data } = await api.delete<{ message: string }>(`/coupons/${id}`);
+    return data;
+  },
+};
+
+export type AdminOffer = {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  href: string;
+  imageUrl?: string;
+  endsAt?: string | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type OfferPayload = {
+  title: string;
+  href: string;
+  subtitle?: string;
+  badge?: string;
+  imageUrl?: string;
+  endsAt?: string | null;
+  active?: boolean;
+  sortOrder?: number;
+};
+
+export const adminOffersApi = {
+  getOffers: async (
+    params: { page?: number; limit?: number } = {},
+  ): Promise<PaginatedList<AdminOffer>> => {
+    const { data } = await api.get<PaginatedList<AdminOffer>>(
+      '/offers/admin',
+      {
+        params: { limit: 100, ...params },
+      },
+    );
+    return data;
+  },
+
+  createOffer: async (payload: OfferPayload): Promise<AdminOffer> => {
+    const { data } = await api.post<AdminOffer>('/offers', payload);
+    return data;
+  },
+
+  updateOffer: async (
+    id: string,
+    payload: Partial<OfferPayload>,
+  ): Promise<AdminOffer> => {
+    const { data } = await api.put<AdminOffer>(`/offers/${id}`, payload);
+    return data;
+  },
+
+  deleteOffer: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(`/offers/${id}`);
+    return data;
+  },
+};
+
+export type AdminReview = {
+  _id: string;
+  rating: number;
+  comment?: string;
+  createdAt?: string;
+  user?: string | { _id?: string; username?: string; email?: string };
+  product?: string | { _id?: string; title?: string; cover?: string; sku?: string };
+};
+
+export const adminReviewsApi = {
+  getReviews: async (
+    params: { page?: number; limit?: number } = {},
+  ): Promise<PaginatedList<AdminReview>> => {
+    const { data } = await api.get<PaginatedList<AdminReview>>(
+      '/reviews/admin',
+      { params: { limit: 100, ...params } },
+    );
+    return data;
+  },
+
+  deleteReview: async (id: string): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(
+      `/reviews/admin/${id}`,
+    );
     return data;
   },
 };

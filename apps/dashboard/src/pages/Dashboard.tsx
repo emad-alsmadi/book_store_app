@@ -10,11 +10,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useAdminOrders } from '../hooks/useAdminOrders';
-import {
-  useAdminBrands,
-  useAdminProducts,
-} from '../hooks/useAdminCatalog';
-import { useAdminUsers } from '../hooks/useAdminUsers';
+import { useAdminStats } from '../hooks/useAdminStats';
 import { errorMessage, type AdminOrder } from '../lib/api';
 
 function formatMoney(n: number) {
@@ -52,59 +48,56 @@ const STATUS_ORDER = [
 ] as const;
 
 export default function Dashboard() {
-  const usersQ = useAdminUsers();
-  const productsQ = useAdminProducts({ limit: 1 });
-  const brandsQ = useAdminBrands({ limit: 1 });
+  const statsQ = useAdminStats();
   const ordersQ = useAdminOrders({ limit: 50 });
 
-  const usersCount = usersQ.data?.length ?? 0;
-  const productsTotal = productsQ.data?.meta?.total ?? productsQ.data?.data?.length ?? 0;
-  const brandsTotal = brandsQ.data?.meta?.total ?? brandsQ.data?.data?.length ?? 0;
-  const ordersTotal = ordersQ.data?.meta?.total ?? ordersQ.data?.data?.length ?? 0;
   const recentOrders = ordersQ.data?.data ?? [];
+  const stats = statsQ.data;
 
-  const paidRevenue = recentOrders
+  const usersCount =
+    stats?.users ?? 0;
+  const productsTotal = stats?.products ?? 0;
+  const brandsTotal = stats?.brands ?? 0;
+  const ordersTotal =
+    stats?.orders ?? ordersQ.data?.meta?.total ?? recentOrders.length ?? 0;
+
+  const samplePaidRevenue = recentOrders
     .filter(isPaidLike)
     .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+  const paidRevenue = stats?.paidRevenue ?? samplePaidRevenue;
+  const revenueFromStats = typeof stats?.paidRevenue === 'number';
 
   const statusCounts = STATUS_ORDER.map((status) => ({
     status,
-    count: recentOrders.filter((o) => o.status === status).length,
+    count:
+      stats?.statusCounts?.[status] ??
+      recentOrders.filter((o) => o.status === status).length,
   }));
   const maxStatus = Math.max(1, ...statusCounts.map((s) => s.count));
+  const statusFromStats = Boolean(stats?.statusCounts);
 
-  const loading =
-    usersQ.isLoading ||
-    productsQ.isLoading ||
-    brandsQ.isLoading ||
-    ordersQ.isLoading;
+  const loading = statsQ.isLoading || ordersQ.isLoading;
 
-  const anyError =
-    usersQ.isError ||
-    productsQ.isError ||
-    brandsQ.isError ||
-    ordersQ.isError;
+  const anyError = statsQ.isError || ordersQ.isError;
 
   const refetchAll = () => {
-    void usersQ.refetch();
-    void productsQ.refetch();
-    void brandsQ.refetch();
+    void statsQ.refetch();
     void ordersQ.refetch();
   };
 
   const cards = [
     {
       label: 'Users',
-      value: loading && usersQ.isLoading ? '—' : String(usersCount),
+      value: loading && statsQ.isLoading ? '—' : String(usersCount),
       icon: Users,
       href: '/users',
-      hint: 'From GET /users',
+      hint: 'From GET /admin/stats',
       iconWrap: 'bg-blue-100 dark:bg-blue-900',
       iconClass: 'text-blue-600 dark:text-blue-400',
     },
     {
       label: 'Products',
-      value: loading && productsQ.isLoading ? '—' : String(productsTotal),
+      value: loading && statsQ.isLoading ? '—' : String(productsTotal),
       icon: Package,
       href: '/products',
       hint: 'Catalog total (incl. inactive)',
@@ -113,7 +106,10 @@ export default function Dashboard() {
     },
     {
       label: 'Orders',
-      value: loading && ordersQ.isLoading ? '—' : String(ordersTotal),
+      value:
+        loading && (statsQ.isLoading || ordersQ.isLoading)
+          ? '—'
+          : String(ordersTotal),
       icon: ShoppingCart,
       href: '/orders',
       hint: 'All-time order count',
@@ -121,11 +117,16 @@ export default function Dashboard() {
       iconClass: 'text-violet-600 dark:text-violet-400',
     },
     {
-      label: 'Paid revenue (sample)',
-      value: loading && ordersQ.isLoading ? '—' : formatMoney(paidRevenue),
+      label: revenueFromStats ? 'Paid revenue' : 'Paid revenue (sample)',
+      value:
+        loading && (statsQ.isLoading || (!revenueFromStats && ordersQ.isLoading))
+          ? '—'
+          : formatMoney(paidRevenue),
       icon: DollarSign,
       href: '/orders',
-      hint: `Sum of paid-like orders in latest ${recentOrders.length}`,
+      hint: revenueFromStats
+        ? 'Sum of all paid-like orders'
+        : `Sum of paid-like orders in latest ${recentOrders.length}`,
       iconWrap: 'bg-amber-100 dark:bg-amber-900',
       iconClass: 'text-amber-600 dark:text-amber-400',
     },
@@ -153,12 +154,7 @@ export default function Dashboard() {
         >
           <RefreshCw
             className={`mr-2 h-4 w-4 ${
-              usersQ.isFetching ||
-              productsQ.isFetching ||
-              brandsQ.isFetching ||
-              ordersQ.isFetching
-                ? 'animate-spin'
-                : ''
+              statsQ.isFetching || ordersQ.isFetching ? 'animate-spin' : ''
             }`}
           />
           Refresh
@@ -168,24 +164,14 @@ export default function Dashboard() {
       {anyError && (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
           Some metrics failed to load.
-          {usersQ.isError && (
+          {statsQ.isError && (
             <span className="block">
-              Users: {errorMessage(usersQ.error, 'error')}
-            </span>
-          )}
-          {productsQ.isError && (
-            <span className="block">
-              Products: {errorMessage(productsQ.error, 'error')}
+              Stats: {errorMessage(statsQ.error, 'error')}
             </span>
           )}
           {ordersQ.isError && (
             <span className="block">
               Orders: {errorMessage(ordersQ.error, 'error')}
-            </span>
-          )}
-          {brandsQ.isError && (
-            <span className="block">
-              Brands: {errorMessage(brandsQ.error, 'error')}
             </span>
           )}
         </div>
@@ -230,7 +216,9 @@ export default function Dashboard() {
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Order status (latest 50)
+              {statusFromStats
+                ? 'Order status (all orders)'
+                : 'Order status (latest 50)'}
             </h2>
             <Link
               to="/orders"
@@ -239,9 +227,11 @@ export default function Dashboard() {
               View orders
             </Link>
           </div>
-          {ordersQ.isLoading ? (
+          {statsQ.isLoading && !statusFromStats && ordersQ.isLoading ? (
             <p className="py-10 text-center text-sm text-gray-500">Loading…</p>
-          ) : recentOrders.length === 0 ? (
+          ) : statusCounts.every((s) => s.count === 0) &&
+            recentOrders.length === 0 &&
+            !stats ? (
             <p className="py-10 text-center text-sm text-gray-500">
               No orders yet.
             </p>
@@ -274,7 +264,7 @@ export default function Dashboard() {
             </h2>
             <span className="inline-flex items-center gap-1 text-sm text-gray-500">
               <Tag className="h-4 w-4" />
-              Brands: {brandsQ.isLoading ? '—' : brandsTotal}
+              Brands: {statsQ.isLoading ? '—' : brandsTotal}
             </span>
           </div>
           <dl className="space-y-3 text-sm">
@@ -303,8 +293,9 @@ export default function Dashboard() {
               </dd>
             </div>
             <p className="pt-2 text-xs text-gray-400">
-              No dedicated analytics API yet — revenue is computed from the
-              latest orders page only.
+              {revenueFromStats
+                ? 'Metrics from GET /admin/stats — paid revenue includes all paid-like orders.'
+                : 'Stats API unavailable — revenue falls back to the latest orders page.'}
             </p>
           </dl>
         </section>

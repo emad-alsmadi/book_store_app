@@ -941,3 +941,46 @@ export const categoriesApi = {
     return data;
   },
 };
+
+export type StorefrontTestimonial = {
+  id: string;
+  name: string;
+  role?: string;
+  quote: string;
+  rating?: number;
+};
+
+export type TestimonialsResponse = {
+  message: string;
+  results: StorefrontTestimonial[];
+};
+
+export const testimonialsApi = {
+  getTestimonials: async (): Promise<TestimonialsResponse> => {
+    const { data } = await api.get<TestimonialsResponse>(
+      endpoints.storefront.testimonials,
+    );
+    return data;
+  },
+};
+
+export type WhyChooseUsItem = {
+  id?: string;
+  icon?: string;
+  title: string;
+  description: string;
+};
+
+export type WhyChooseUsResponse = {
+  message: string;
+  items: WhyChooseUsItem[];
+};
+
+export const whyChooseUsApi = {
+  getWhyChooseUs: async (): Promise<WhyChooseUsResponse> => {
+    const { data } = await api.get<WhyChooseUsResponse>(
+      endpoints.storefront.whyChooseUs,
+    );
+    return data;
+  },
+};
