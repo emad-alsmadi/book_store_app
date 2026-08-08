@@ -1,386 +1,203 @@
-# Fountain WebApp — Modern Full‑Stack Template Marketplace
+# TrendVaulta
 
-A professional, production‑ready template marketplace built with **Next.js 16 (App Router)**, **Node.js/Express**, and **MongoDB**. Designed for creators to showcase, sell, and manage digital templates with a polished, responsive UI and robust authentication system.
+Retail e-commerce monorepo for beauty, fashion, and lifestyle products. Buyers shop on the Next.js storefront; admins manage catalog and orders in the Vite dashboard; the Express API serves both with MongoDB and Stripe.
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2.3-blue?style=flat-square&logo=react)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
-[![License](https://img.shields.io/badge/License-ISC-blue?style=flat-square)](LICENSE)
+| App | Path | Port | Role |
+|---|---|---|---|
+| API | `apps/api` | **3000** | Express + Mongoose + Stripe |
+| Storefront | `apps/website` | **3001** | Next.js 16 App Router |
+| Dashboard | `apps/dashboard` | **3002** | Vite + React admin |
 
----
+Shared packages: `@trendvaulta/types`, `@trendvaulta/api-client`, `@trendvaulta/ui` under `packages/`.
 
-## 🌟 Key Features
-
-### 🎨 Frontend (Next.js)
-
-- **Modern App Router** architecture with TypeScript
-- **Responsive Design** optimized for all devices:
-  - Mobile‑first bottom navigation with "More" menu pattern
-  - Professional animations with Framer Motion
-  - Beautiful glassmorphism UI with TailwindCSS
-- **Component Library** built on Radix UI primitives:
-  - Accessible dropdowns, dialogs, accordions, tabs
-  - Custom form components with Zod validation
-- **State Management**:
-  - TanStack Query for server state synchronization
-  - Zustand for client‑side state (cart, UI preferences)
-- **Authentication & Authorization**:
-  - JWT‑based auth with cookie persistence
-  - Role‑based route protection via Next.js middleware
-  - Complete auth flows: Login, Register, Profile, Logout
-- **Template Management**:
-  - Browse templates with advanced filtering
-  - Template detail pages with creator profiles
-  - Shopping cart and checkout flow
-  - Order history and management
-
-### 🚀 Backend (Node.js/Express)
-
-- **RESTful API** with Express.js and async handlers
-- **MongoDB Integration** with Mongoose ODM
-- **Security & Authentication**:
-  - JWT stateless authentication
-  - bcryptjs for password hashing
-  - Role‑based access control (user, admin, moderator)
-- **Email Services**:
-  - Password reset flow with Nodemailer
-  - SMTP support (Gmail or custom provider)
-  - Secure token generation with dynamic secrets
-- **Data Validation** with Joi schemas
-- **CORS** configuration for cross‑origin requests
+Package manager: **npm workspaces** (root `package.json`).
 
 ---
 
-## 🛠 Tech Stack
+## Features
 
-### Frontend
+- JWT auth (login, register, profile, password reset email)
+- Product catalog with brands, filters, badges, and sorting (e.g. bestselling)
+- Client cart + Stripe Checkout
+- Orders, wishlist, reviews
+- Coupons and offers
+- Storefront rails (recommendations, bundles, recently viewed, gift finder, lookbooks, trust, testimonials, why-choose-us)
+- Admin dashboard for products, brands, orders, users, coupons, offers, reviews, and stats
 
-- **Framework**: Next.js 16.1.6 (App Router)
-- **Language**: TypeScript 5.x
-- **Styling**: TailwindCSS 4.x
-- **UI Components**: Radix UI primitives
-- **Animations**: Framer Motion 12.x
-- **Icons**: Lucide React
-- **Forms**: React Hook Form + Zod
-- **HTTP Client**: Axios with interceptors
-- **State Management**: TanStack Query + Zustand
-- **Auth Cookies**: js-cookie
-
-### Backend
-
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js 5.x
-- **Database**: MongoDB with Mongoose 8.x
-- **Authentication**: JWT (jsonwebtoken)
-- **Password Hashing**: bcryptjs
-- **Validation**: Joi
-- **Email**: Nodemailer
-- **Development**: Nodemon
+Catalog domain is **products and brands** (not digital templates).
 
 ---
 
-## 🏗 Architecture Overview
+## Tech stack
+
+**Storefront** — Next.js 16, React 19, TypeScript, TanStack Query, Zustand, Tailwind CSS, Framer Motion, Axios
+
+**Dashboard** — Vite, React 19, TypeScript, React Router, TanStack Query, Tailwind CSS
+
+**API** — Node.js 18+, Express 5, Mongoose, Joi, JWT, bcryptjs, Stripe, Nodemailer
+
+---
+
+## Repository layout
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (Next.js)                        │
-├─────────────────────────────────────────────────────────────┤
-│  • App Router with Server Components                         │
-│  • Client Components with React 19                          │
-│  • Middleware for Route Protection                          │
-│  • API Routes (Next.js rewrites to backend)                 │
-└─────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Backend (Express.js)                      │
-├─────────────────────────────────────────────────────────────┤
-│  • RESTful API under /api                                    │
-│  • JWT Authentication Middleware                             │
-│  • MongoDB Connection & Models                              │
-│  • Email Service Integration                                 │
-└─────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Database (MongoDB)                        │
-├─────────────────────────────────────────────────────────────┤
-│  • Users (Authentication & Roles)                           │
-│  • Templates (Digital Products)                             │
-│  • Creators (Template Authors)                              │
-│  • Orders (Purchase Records)                                │
-└─────────────────────────────────────────────────────────────┘
+trendvaulta/
+├── apps/
+│   ├── api/                 # Express API (default PORT=3000)
+│   ├── website/             # Next.js storefront (port 3001)
+│   └── dashboard/           # Vite admin (port 3002; proxies /api → :3000)
+├── packages/
+│   ├── types/
+│   ├── api-client/
+│   └── ui/
+├── docs/                    # Status, audits, backlogs
+├── package.json             # npm workspaces + scripts
+└── AGENTS.md                # AI agent instructions
 ```
 
 ---
 
-## 🔐 Authentication Flow
-
-1. **User Registration/Login**
-   - Credentials validated against MongoDB
-   - JWT token generated with user ID and roles
-   - Token stored in non‑httpOnly cookies for client access
-
-2. **API Authentication**
-   - Axios interceptor automatically attaches `Authorization: Bearer <token>`
-   - Backend middleware verifies JWT on protected routes
-
-3. **Route Protection**
-   - Next.js middleware checks cookies on navigation
-   - Automatic redirects to login/unauthorized based on role
-
-4. **Password Reset**
-   - User requests reset → email with secure link sent
-   - Dynamic secret ensures one‑time use
-   - Token expires quickly for security
-
----
-
-## 📁 Project Structure
-
-```
-craftify-templates-marketplace/
-├── frontend/                    # Next.js frontend application
-│   ├── src/
-│   │   ├── app/                # App Router pages
-│   │   │   ├── (auth)/         # Authentication routes
-│   │   │   ├── templates/      # Template listing & details
-│   │   │   ├── creators/       # Creator profiles
-│   │   │   ├── orders/         # Order management
-│   │   │   └── api/            # API route handlers
-│   │   ├── components/         # Reusable UI components
-│   │   │   ├── ui/            # Base UI primitives
-│   │   │   ├── cards/         # Template/creator cards
-│   │   │   └── navigation/    # Navigation components
-│   │   ├── lib/               # Utilities and configurations
-│   │   │   ├── api.ts         # Axios client configuration
-│   │   │   ├── authQuery.ts   # Auth-related queries
-│   │   │   └── templatesQuery.ts # Template data queries
-│   │   ├── types/             # TypeScript type definitions
-│   │   └── hooks/             # Custom React hooks
-│   ├── public/                 # Static assets
-│   └── package.json
-├── backend/                    # Express.js backend API
-│   ├── controllers/            # Request handlers
-│   ├── models/                 # Mongoose schemas
-│   ├── routes/                 # API route definitions
-│   ├── middlewares/            # Custom middleware
-│   ├── config/                 # Database and app configuration
-│   ├── utils/                  # Helper functions
-│   └── package.json
-├── README.md                   # This file
-└── .env.example               # Environment variables template
-```
-
----
-
-## 🚀 Getting Started
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18 or higher
-- MongoDB database (local or MongoDB Atlas)
-- Git
+- Node.js 18+ and npm 9+
+- MongoDB (local or Atlas)
+- Stripe keys for checkout (optional for non-payment work)
 
-### Installation
+### Install
 
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/your-username/craftify-templates-marketplace.git
-   cd craftify-templates-marketplace
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   # Frontend dependencies
-   cd frontend
-   npm install
-
-   # Backend dependencies
-   cd ../backend
-   npm install
-   ```
-
-3. **Environment Setup**
-
-   ```bash
-   # Copy environment template
-   cp .env.example .env
-
-   # Configure your environment variables
-   # See Environment Variables section below
-   ```
-
-4. **Database Setup**
-   - Ensure MongoDB is running locally or configure MongoDB Atlas
-   - Update `MONGO_URL` in your `.env` file
-
-5. **Start Development Servers**
-
-   ```bash
-   # Start backend (port 3000)
-   cd backend
-   npm run dev
-
-   # Start frontend (port 3001)
-   cd ../frontend
-   npm run dev
-   ```
-
-6. **Access the Application**
-   - Frontend: http://localhost:3001
-   - Backend API: http://localhost:3000/api
-
----
-
-## 🔧 Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# Database
-MONGO_URL=mongodb://localhost:27017/craftify_templates
-DB_NAME=craftify_templates
-
-# JWT Configuration
-JWT_SECRET_KEY=your-super-secret-jwt-key-here
-JWT_EXPIRE=30d
-
-# Email Configuration (Gmail or SMTP)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-FROM_EMAIL=noreply@craftify.com
-FROM_NAME=Craftify Templates
-
-# Frontend URL (for email links)
-FRONTEND_URL=http://localhost:3001
-
-# Optional: Custom SMTP
-# SMTP_HOST=your-smtp-server.com
-# SMTP_PORT=587
-# SMTP_USER=your-smtp-username
-# SMTP_PASS=your-smtp-password
+```bash
+npm install
 ```
 
----
+### Environment
 
-## 📱 Mobile Responsiveness
+Create `apps/api/.env` (there is no committed `.env.example` yet). Typical variables:
 
-The application features a **professional mobile navigation pattern**:
+```env
+NODE_ENV=development
+PORT=3000
+MONGO_URL=mongodb://localhost:27017/trendvaulta
+DB_NAME=trendvaulta
 
-- **Primary Navigation**: 4 essential tabs (Templates, Creators, Cart, Orders)
-- **More Menu**: Consolidates secondary actions (About, Login/Profile/Logout)
-- **Touch‑Friendly**: Optimized button sizes and spacing
-- **Responsive Design**: Adapts seamlessly from mobile to desktop
+JWT_SECRET_KEY=replace-me
+JWT_EXPIRE=30d
 
----
+FRONTEND_URL=http://localhost:3001
+DASHBOARD_URL=http://localhost:3002
+ALLOWED_ORIGINS=
 
-## 🛡 Security Features
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=
+EMAIL_PASS=
+FROM_EMAIL=noreply@trendvaulta.com
+FROM_NAME=TrendVaulta
 
-- **JWT Authentication**: Stateless token-based auth
-- **Password Hashing**: bcryptjs for secure password storage
-- **Role-Based Access Control**: Granular permissions system
-- **Input Validation**: Joi schemas for API input validation
-- **CORS Configuration**: Proper cross-origin request handling
-- **Secure Password Reset**: One-time use tokens with dynamic secrets
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+```
 
----
+Storefront (optional, defaults rewrite to `http://localhost:3000`):
 
-## 📊 API Endpoints
+```env
+# apps/website/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
 
-### Authentication
+### Run locally
 
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
+All three apps:
 
-### Templates
+```bash
+npm run dev
+```
 
-- `GET /api/templates` - List templates with filtering
-- `GET /api/templates/:id` - Get template details
-- `POST /api/templates` - Create template (admin/creator)
+Or individually:
 
-### Creators
+```bash
+npm run dev:api
+npm run dev:website
+npm run dev:dashboard
+```
 
-- `GET /api/creators` - List creators
-- `GET /api/creators/:id` - Get creator details
+| URL | Service |
+|---|---|
+| http://localhost:3001 | Storefront |
+| http://localhost:3002 | Dashboard |
+| http://localhost:3000/api | API |
 
-### Orders
+Website rewrites `/api/*` to the API. Dashboard Vite proxies `/api` to `http://localhost:3000`.
 
-- `GET /api/orders/my` - Get user orders
-- `POST /api/orders` - Create new order
-- `GET /api/orders/:id` - Get order details
+### Seed data (optional)
 
----
-
-## 🎨 UI Components
-
-The application uses a **consistent design system**:
-
-- **Color Scheme**: Professional gradient-based design
-- **Typography**: Optimized font hierarchy with Geist font
-- **Animations**: Smooth transitions with Framer Motion
-- **Glassmorphism**: Modern frosted glass effects
-- **Responsive Grid**: Adaptive layouts for all screen sizes
-
----
-
-## 🚀 Deployment
-
-### Frontend (Vercel)
-
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
-
-### Backend (Railway/Heroku)
-
-1. Connect your repository to Railway/Heroku
-2. Configure environment variables
-3. Set MongoDB connection string
-4. Deploy and configure custom domain
+See `apps/api/SEEDER_README.md` and scripts under `apps/api/seeders/`.
 
 ---
 
-## 🤝 Contributing
+## Scripts (root)
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+| Script | Description |
+|---|---|
+| `npm run dev` | API + website + dashboard |
+| `npm run build` | Build workspaces |
+| `npm run build:website` | Build storefront |
+| `npm run build:dashboard` | Build dashboard |
+| `npm run test:api` | API tests |
+| `npm run typecheck:website` | Website `tsc --noEmit` |
+| `npm run lint` | Lint workspaces |
 
 ---
 
-## 🙋‍♂️ Support
+## API overview
 
-If you have any questions or need support, please:
+Routes live in `apps/api/routes/` and are mounted from `apps/api/app.js`. Do not guess paths — look them up there.
 
-1. Check the [Issues](https://github.com/your-username/craftify-templates-marketplace/issues) page
-2. Create a new issue with detailed information
-3. Join our community discussions
+Common areas:
+
+- Auth / profile / password — `/api/auth/*`, `/api/profile`, `/api/password/*`
+- Products / brands — `/api/products/*`, `/api/brands/*`
+- Orders / payments — `/api/orders/*`, `/api/payments/*`
+- Stripe webhook — `POST /api/webhooks/stripe` (raw body)
+- Wishlist / reviews / coupons / offers
+- Recommendations, bundles, recently viewed, gift finder, lookbooks
+- Storefront content — trust, categories, testimonials, why-choose-us
+- Admin stats (and related admin routes)
+- Health — `GET /api/health`, `GET /api/ready` when mounted
+
+Typical JSON shape: `{ message, data?, errors? }` (confirm per controller). Auth uses `Authorization: Bearer <token>` via `verfiyToken`.
+
+Storefront client: `apps/website/src/lib/api.ts`  
+Dashboard client: `apps/dashboard/src/lib/api.ts` and/or `@trendvaulta/api-client`
 
 ---
 
-## 🌟 Acknowledgments
+## Auth note
 
-- Built with modern web technologies and best practices
-- Inspired by leading template marketplaces and design systems
-- Special thanks to the open-source community for the amazing tools and libraries
+The storefront persists the JWT with client-readable cookies (`js-cookie`). Treat this as the current implementation; hardening (e.g. httpOnly) is a deliberate follow-up, not assumed done.
 
 ---
 
-**Built with ❤️ for the creator community**
+## Deployment
+
+- API can deploy as a Node web service (see `apps/api/render.yaml` / `apps/api/DEPLOYMENT_GUIDE.md` — some values may still reflect older branding; prefer TrendVaulta env names above).
+- Prefer MongoDB Atlas for production data.
+- Configure Stripe webhook to `POST /api/webhooks/stripe` with the signing secret.
+- Set `FRONTEND_URL`, `DASHBOARD_URL`, and CORS allowlists for production origins.
+
+---
+
+## Docs & agent guidance
+
+| File | Purpose |
+|---|---|
+| `AGENTS.md` | Instructions for AI agents |
+| `.cursor/rules/` | Cursor rules (session, API, frontend) |
+| `docs/` | Audits, gap analysis, remediation notes |
+
+---
+
+## License
+
+ISC — see repository license file if present.
