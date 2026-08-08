@@ -47,6 +47,8 @@ app.use('/api/', require('./routes/offers'));
 app.use('/api/', require('./routes/giftFinder'));
 app.use('/api/', require('./routes/lookbooks'));
 app.use('/api/', require('./routes/storefrontTrust'));
+app.use('/api/', require('./routes/storefrontCategories'));
+app.use('/api/', require('./routes/adminStats'));
 
 // Friendly roots (this process is API-only; the Next.js app is a separate server)
 app.get('/', (req, res) => {

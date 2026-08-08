@@ -1,9 +1,95 @@
 const { Product } = require('./models/Product');
 const { Brand } = require('./models/Brand');
 const { Coupon } = require('./models/Coupon');
+const { Offer } = require('./models/Offer');
 const { buildSeedData } = require('./data');
 const { connectToDB } = require('./config/db');
 require('dotenv').config();
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+const offers = [
+  {
+    title: 'Summer Glow Skincare Edit',
+    subtitle: 'SPF, serums, and glow sets up to 35% off',
+    badge: 'Limited',
+    href: '/shop?category=skincare&sale=true',
+    imageUrl: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800',
+    endsAt: new Date(Date.now() + 14 * dayMs),
+    active: true,
+    sortOrder: 1,
+  },
+  {
+    title: 'Luxury Fragrance Weekend',
+    subtitle: 'Eau de parfum bestsellers from $49',
+    badge: 'Hot',
+    href: '/shop?category=perfumes',
+    imageUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800',
+    endsAt: new Date(Date.now() + 3 * dayMs),
+    active: true,
+    sortOrder: 2,
+  },
+  {
+    title: 'Makeup Must-Haves',
+    subtitle: 'Lipsticks, palettes, and primers — buy 2 get 1',
+    badge: 'BOGO',
+    href: '/shop?category=makeup',
+    imageUrl: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800',
+    endsAt: new Date(Date.now() + 21 * dayMs),
+    active: true,
+    sortOrder: 3,
+  },
+  {
+    title: 'New Season Wardrobe',
+    subtitle: 'Dresses, tops, and activewear from $19',
+    badge: 'New',
+    href: '/shop?category=clothing',
+    imageUrl: 'https://images.unsplash.com/photo-1483985988106-5a81d489f5ea?w=800',
+    endsAt: new Date(Date.now() + 30 * dayMs),
+    active: true,
+    sortOrder: 4,
+  },
+  {
+    title: 'Accessories Flash Sale',
+    subtitle: 'Bags, jewelry, and sunglasses up to 40% off',
+    badge: 'Flash',
+    href: '/shop?category=accessories',
+    imageUrl: 'https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=800',
+    endsAt: new Date(Date.now() + 2 * dayMs),
+    active: true,
+    sortOrder: 5,
+  },
+  {
+    title: 'Home Spa Night In',
+    subtitle: 'Candles, linens, and self-care essentials',
+    badge: 'Bundle',
+    href: '/shop?category=home',
+    imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800',
+    endsAt: new Date(Date.now() + 45 * dayMs),
+    active: true,
+    sortOrder: 6,
+  },
+  {
+    title: 'Clearance Beauty Edit',
+    subtitle: 'Last-chance makeup and skincare deals',
+    badge: 'Clearance',
+    href: '/shop?sale=true',
+    imageUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800',
+    endsAt: null,
+    active: true,
+    sortOrder: 7,
+  },
+  {
+    title: 'Archived Winter Warmers',
+    subtitle: 'Inactive offer kept for admin/list testing',
+    badge: 'Ended',
+    href: '/shop?category=clothing',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
+    endsAt: new Date(Date.now() - 7 * dayMs),
+    active: false,
+    sortOrder: 99,
+  },
+];
 
 const coupons = [
   {
@@ -86,7 +172,7 @@ const coupons = [
   },
 ];
 
-// Import Products, Brands & Coupons
+// Import Products, Brands, Coupons & Offers
 const importData = async () => {
   try {
     await connectToDB();
@@ -98,6 +184,7 @@ const importData = async () => {
     await Brand.deleteMany({});
     await Product.deleteMany({});
     await Coupon.deleteMany({});
+    await Offer.deleteMany({});
 
     console.log('📦 Generating new data...');
     const { brands, products } = buildSeedData(productsPerCategory);
@@ -111,11 +198,15 @@ const importData = async () => {
     console.log(`🎫 Inserting ${coupons.length} coupons...`);
     await Coupon.insertMany(coupons);
 
+    console.log(`🏷️  Inserting ${offers.length} offers...`);
+    await Offer.insertMany(offers);
+
     console.log('✅ Data imported successfully!');
     console.log(`📊 Summary:`);
     console.log(`   - Brands: ${brands.length}`);
     console.log(`   - Products: ${products.length}`);
     console.log(`   - Coupons: ${coupons.length}`);
+    console.log(`   - Offers: ${offers.length}`);
     console.log(`   - Products per category: ~${productsPerCategory}`);
 
     process.exit();
@@ -125,7 +216,7 @@ const importData = async () => {
   }
 };
 
-// Remove Products, Brands & Coupons
+// Remove Products, Brands, Coupons & Offers
 const removeData = async () => {
   try {
     await connectToDB();
@@ -133,6 +224,7 @@ const removeData = async () => {
     await Product.deleteMany({});
     await Brand.deleteMany({});
     await Coupon.deleteMany({});
+    await Offer.deleteMany({});
     console.log('✅ Data removed successfully!');
     process.exit();
   } catch (error) {

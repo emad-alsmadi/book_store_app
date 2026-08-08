@@ -13,6 +13,7 @@ const {
   calculateCouponDiscount,
   decrementStockForPaidOrder,
   incrementCouponUsedCount,
+  incrementSalesCountForPaidOrder,
 } = require('../utils/commerce');
 const {
   claimWebhookEvent,
@@ -107,6 +108,7 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     stripeSessionId: '',
     paymentIntentId: '',
     stockDecremented: false,
+    salesCountIncremented: false,
   });
 
   const lineItems = normalizedItems.map((it) => ({
@@ -223,6 +225,11 @@ async function markOrderPaidFromSession(session) {
   if (order.couponId && !order.couponIncremented) {
     await incrementCouponUsedCount(order.couponId);
     order.couponIncremented = true;
+  }
+
+  if (!order.salesCountIncremented) {
+    await incrementSalesCountForPaidOrder(Product, order);
+    order.salesCountIncremented = true;
   }
 
   order.paymentStatus = 'paid';

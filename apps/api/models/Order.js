@@ -169,6 +169,10 @@ const OrderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    salesCountIncremented: {
+      type: Boolean,
+      default: false,
+    },
     stockRestored: {
       type: Boolean,
       default: false,

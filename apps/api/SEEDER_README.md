@@ -162,3 +162,4 @@ For very large datasets (500+ products per category), consider:
 - Ratings are randomized (2.5-5.0 stars)
 - All brands are set to active by default
 - Coupons are included with the seeder for testing payment flows
+- Offers (merchandising deals) are seeded so `GET /api/offers` returns beauty/fashion promos after `-import` (active + one inactive for filter testing)

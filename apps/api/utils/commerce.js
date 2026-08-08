@@ -224,6 +224,22 @@ async function incrementCouponUsedCount(couponId) {
 }
 
 /**
+ * Bump Product.salesCount for each paid line qty (bestselling sort).
+ * Idempotency is enforced by the caller via order.salesCountIncremented.
+ */
+async function incrementSalesCountForPaidOrder(Product, order) {
+  for (const it of order.items || []) {
+    const productId = it.productId;
+    const qty = Number(it.qty);
+    if (!productId || !(qty > 0)) continue;
+
+    await Product.findByIdAndUpdate(productId, {
+      $inc: { salesCount: qty },
+    });
+  }
+}
+
+/**
  * Restore inventory after a paid order is canceled.
  * Idempotency is enforced by the caller via order.stockRestored.
  */
@@ -271,5 +287,6 @@ module.exports = {
   decrementStockForPaidOrder,
   restoreStockForCanceledOrder,
   incrementCouponUsedCount,
+  incrementSalesCountForPaidOrder,
   FLAT_SHIPPING_USD,
 };
