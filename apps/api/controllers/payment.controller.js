@@ -19,6 +19,8 @@ const {
   claimWebhookEvent,
   releaseWebhookEvent,
 } = require('../utils/stripeWebhookIdempotency');
+const { sendOrderConfirmationEmail } = require('../utils/mail');
+const { User } = require('../models/User');
 
 function dollarsToCents(amount) {
   return Math.round(Number(amount) * 100);
@@ -238,6 +240,27 @@ async function markOrderPaidFromSession(session) {
   order.paymentIntentId = paymentIntentId || order.paymentIntentId;
   order.paidAt = new Date();
   await order.save();
+
+  if (!order.confirmationEmailSent) {
+    try {
+      const user = await User.findById(order.user).select('email').lean();
+      const sent = await sendOrderConfirmationEmail({
+        to: user?.email,
+        orderId: String(order._id),
+        totalPrice: order.totalPrice,
+        items: order.items,
+      });
+      if (sent) {
+        order.confirmationEmailSent = true;
+        await order.save();
+      }
+    } catch (mailErr) {
+      console.error(
+        'Order confirmation email error (payment still paid):',
+        mailErr?.message || mailErr,
+      );
+    }
+  }
 }
 
 async function handleCheckoutSessionCompleted(session) {

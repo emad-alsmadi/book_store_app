@@ -11,6 +11,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/MAC_Cosmetics_logo.svg/200px-MAC_Cosmetics_logo.svg.png',
     website: 'https://www.maccosmetics.com',
     country: 'USA',
+    featured: true,
   },
   {
     name: 'Chanel',
@@ -19,6 +20,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Chanel_logo.svg/200px-Chanel_logo.svg.png',
     website: 'https://www.chanel.com',
     country: 'France',
+    featured: true,
   },
   {
     name: 'Dior',
@@ -27,6 +29,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Dior_logo.svg/200px-Dior_logo.svg.png',
     website: 'https://www.dior.com',
     country: 'France',
+    featured: true,
   },
   {
     name: 'Sephora',
@@ -36,6 +39,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Sephora_logo.svg/200px-Sephora_logo.svg.png',
     website: 'https://www.sephora.com',
     country: 'France',
+    featured: true,
   },
   {
     name: 'NARS Cosmetics',
@@ -44,15 +48,17 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/NARS_logo.svg/200px-NARS_logo.svg.png',
     website: 'https://www.narscosmetics.com',
     country: 'USA',
+    featured: true,
   },
   {
     name: 'Estée Lauder',
     slug: 'estee-lauder',
     description:
       'American multinational manufacturer and marketer of prestige skincare, makeup, fragrance and hair care products',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5 5a/Estee_Lauder_logo.svg/200px-Estee_Lauder_logo.svg.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Estee_Lauder_logo.svg/200px-Estee_Lauder_logo.svg.png',
     website: 'https://www.esteelauder.com',
     country: 'USA',
+    featured: true,
   },
   {
     name: "L'Oréal Paris",
@@ -61,6 +67,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/L%27Oreal_logo.svg/200px-L%27Oreal_logo.svg.png',
     website: 'https://www.lorealparis.com',
     country: 'France',
+    featured: false,
   },
   {
     name: 'Gucci',
@@ -69,6 +76,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Gucci_logo.svg/200px-Gucci_logo.svg.png',
     website: 'https://www.gucci.com',
     country: 'Italy',
+    featured: true,
   },
   {
     name: 'Prada',
@@ -77,6 +85,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Prada_logo.svg/200px-Prada_logo.svg.png',
     website: 'https://www.prada.com',
     country: 'Italy',
+    featured: true,
   },
   {
     name: 'Zara',
@@ -85,6 +94,7 @@ const brandsData = [
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Zara_logo.svg/200px-Zara_logo.svg.png',
     website: 'https://www.zara.com',
     country: 'Spain',
+    featured: false,
   },
 ];
 
@@ -1120,8 +1130,13 @@ async function seedDatabase() {
     await Product.deleteMany({});
     console.log('Cleared existing data');
 
-    // Insert brands
-    const brands = await Brand.insertMany(brandsData);
+    // Insert brands (first 8 get featured for storefront strip)
+    const brands = await Brand.insertMany(
+      brandsData.map((b, i) => ({
+        ...b,
+        featured: typeof b.featured === 'boolean' ? b.featured : i < 8,
+      })),
+    );
     console.log(`Inserted ${brands.length} brands`);
 
     // Create brand mapping

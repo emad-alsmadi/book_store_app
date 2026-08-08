@@ -39,7 +39,7 @@ services:
       - key: FRONTEND_URL
         sync: false  # Set this in Render dashboard
 
-# Add health check endpoint to app.js
+# Health check: GET /api/health (liveness), GET /api/ready (DB)
 databases:
   # MongoDB Atlas (External) - No need to create database on Render
   # We'll use MongoDB Atlas connection string

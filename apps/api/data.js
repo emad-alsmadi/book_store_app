@@ -517,7 +517,7 @@ function generateBrandsForCategory(category, multiplier = 1) {
         website: `https://www.${generateSlug(brand.name)}.com`,
         country: brand.country,
         isActive: true,
-        featured: idx < 2, // First 2 brands are featured
+        featured: idx < 3, // First 3 brands per category are featured
       });
     });
   }

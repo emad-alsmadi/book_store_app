@@ -10,6 +10,8 @@ const ROLE_PERMISSIONS = {
     'coupons:read',
     'offers:read',
     'orders:read',
+    'reviews:read',
+    'reviews:delete',
     'users:read',
   ],
 
@@ -28,6 +30,9 @@ const ROLE_PERMISSIONS = {
     'offers:delete',
     'orders:read',
     'orders:write',
+    'reviews:read',
+    'reviews:write',
+    'reviews:delete',
     'users:read',
     'users:write',
     'users:delete',

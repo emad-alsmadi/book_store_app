@@ -231,6 +231,57 @@ const getMyReviews = asyncHandler(async (req, res) => {
   res.status(200).json(reviews);
 });
 
+/**
+ * Admin: list all reviews (paginated).
+ * @route GET /api/reviews/admin
+ * @access Private (reviews:read)
+ */
+const getAdminReviews = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 50));
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    Review.find()
+      .populate('user', 'username email')
+      .populate('product', 'title cover sku')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Review.countDocuments(),
+  ]);
+
+  res.status(200).json({
+    data,
+    meta: {
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+      limit,
+    },
+  });
+});
+
+/**
+ * Admin: delete any review.
+ * @route DELETE /api/reviews/admin/:reviewId
+ * @access Private (reviews:delete)
+ */
+const adminDeleteReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
+  const review = await Review.findById(reviewId);
+  if (!review) {
+    return res.status(404).json({ message: 'Review not found' });
+  }
+
+  const productId = review.product;
+  await Review.findByIdAndDelete(reviewId);
+  await updateProductRating(productId);
+
+  res.status(200).json({ message: 'Review deleted successfully' });
+});
+
 module.exports = {
   createReview,
   updateReview,
@@ -238,4 +289,6 @@ module.exports = {
   getProductReviews,
   getMyReview,
   getMyReviews,
+  getAdminReviews,
+  adminDeleteReview,
 };
