@@ -78,4 +78,9 @@ export const endpoints = {
   recommendations: {
     list: '/recommendations',
   },
+  storefront: {
+    trust: '/storefront/trust',
+    giftFinder: '/storefront/gift-finder',
+    lookbooks: '/storefront/lookbooks',
+  },
 } as const;

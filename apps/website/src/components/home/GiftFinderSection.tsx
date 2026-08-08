@@ -10,6 +10,7 @@ import {
   type DemoGiftFinderConfig,
   type DemoGiftOption,
 } from '@/data/demoStorefront';
+import { useGiftFinderConfig } from '@/hooks/storefront/giftFinderQuery';
 
 type Props = {
   config?: DemoGiftFinderConfig;
@@ -55,16 +56,23 @@ function ChipGroup({
   );
 }
 
-/** DEMO module — TODO(api): GET /api/storefront/gift-finder */
-export function GiftFinderSection({ config = DEMO_GIFT_FINDER }: Props) {
+/** Gift finder — GET /api/storefront/gift-finder with DEMO_GIFT_FINDER fallback */
+export function GiftFinderSection({ config: configProp }: Props) {
+  const { data, isFetching } = useGiftFinderConfig();
+
+  const fromApi = Boolean(data?.fromApi);
+  const config =
+    configProp ?? data?.config ?? DEMO_GIFT_FINDER;
+  const usingFallback = !configProp && !fromApi;
+
   const [occasionId, setOccasionId] = useState<string | null>(
-    config.occasions[0]?.id ?? null,
+    () => config.occasions[0]?.id ?? null,
   );
   const [recipientId, setRecipientId] = useState<string | null>(
-    config.recipients[0]?.id ?? null,
+    () => config.recipients[0]?.id ?? null,
   );
   const [budgetId, setBudgetId] = useState<string | null>(
-    config.budgets[3]?.id ?? config.budgets[0]?.id ?? null,
+    () => config.budgets[3]?.id ?? config.budgets[0]?.id ?? null,
   );
 
   const href = useMemo(
@@ -89,7 +97,7 @@ export function GiftFinderSection({ config = DEMO_GIFT_FINDER }: Props) {
             <div className='p-6 sm:p-8 lg:p-10'>
               <p className='inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-rose-700'>
                 <Gift className='h-3.5 w-3.5' aria-hidden />
-                Demo gift finder
+                {usingFallback ? 'Demo gift finder' : 'Gift finder'}
               </p>
               <h2
                 id='gift-finder-heading'
@@ -98,10 +106,16 @@ export function GiftFinderSection({ config = DEMO_GIFT_FINDER }: Props) {
                 Find a thoughtful gift
               </h2>
               <p className='mt-2 max-w-md text-sm text-stone-600'>
-                Pick an occasion, who it’s for, and a budget — we’ll route you
-                to matching products. Original TrendVaulta demo; replace with
-                API later.
+                {usingFallback
+                  ? 'Pick an occasion, who it’s for, and a budget — demo options while we refresh live gift filters.'
+                  : 'Pick an occasion, who it’s for, and a budget — we’ll route you to matching products.'}
               </p>
+
+              {usingFallback && isFetching ? (
+                <p className='mt-4 text-sm text-stone-500' role='status'>
+                  Loading gift options…
+                </p>
+              ) : null}
 
               <div className='mt-6 space-y-5'>
                 <ChipGroup
@@ -132,7 +146,9 @@ export function GiftFinderSection({ config = DEMO_GIFT_FINDER }: Props) {
                   Show gift ideas
                 </Link>
                 <p className='text-xs text-stone-500'>
-                  Opens catalog with demo filters applied.
+                  {usingFallback
+                    ? 'Opens catalog with demo filters applied.'
+                    : 'Opens catalog with your filters applied.'}
                 </p>
               </div>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useProductById } from '@/hooks/products/productsQuery';
 import { motion } from 'framer-motion';
 import {
@@ -27,9 +27,10 @@ import { trackRecentlyViewed } from '@/lib/recentlyViewed';
 export default function ProductDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data: product, isLoading, error } = useProductById(params.id);
+  const { id } = use(params);
+  const { data: product, isLoading, error } = useProductById(id);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);

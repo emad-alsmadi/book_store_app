@@ -823,3 +823,93 @@ export const recommendationsApi = {
     return data;
   },
 };
+
+export type GiftFinderOption = {
+  id: string;
+  label: string;
+  q?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
+export type GiftFinderResponse = {
+  message: string;
+  occasions: GiftFinderOption[];
+  recipients: GiftFinderOption[];
+  budgets: GiftFinderOption[];
+};
+
+/**
+ * Gift finder API — storefront facet config for PLP query building
+ */
+export const giftFinderApi = {
+  /**
+   * GET /api/storefront/gift-finder
+   * @returns Facet options envelope
+   */
+  getConfig: async (): Promise<GiftFinderResponse> => {
+    const { data } = await api.get<GiftFinderResponse>(
+      endpoints.storefront.giftFinder,
+    );
+    return data;
+  },
+};
+
+export type StorefrontTrustIcon = 'truck' | 'refresh' | 'shield' | 'headset';
+
+export type StorefrontTrustItem = {
+  id?: string;
+  icon: StorefrontTrustIcon;
+  title: string;
+  description: string;
+};
+
+export type StorefrontTrustResponse = {
+  message: string;
+  items: StorefrontTrustItem[];
+};
+
+/**
+ * Trust / service strip — GET /api/storefront/trust
+ */
+export const storefrontTrustApi = {
+  getTrust: async (): Promise<StorefrontTrustResponse> => {
+    const { data } = await api.get<StorefrontTrustResponse>(
+      endpoints.storefront.trust,
+    );
+    return data;
+  },
+};
+
+export type StorefrontLookbookStory = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl: string;
+  tone: 'rose' | 'stone' | 'teal';
+};
+
+export type LookbooksResponse = {
+  message: string;
+  results: StorefrontLookbookStory[];
+};
+
+/**
+ * Lookbooks API — editorial storefront modules
+ */
+export const lookbooksApi = {
+  /**
+   * GET /api/storefront/lookbooks
+   * @returns Envelope with lookbook story results
+   */
+  getLookbooks: async (): Promise<LookbooksResponse> => {
+    const { data } = await api.get<LookbooksResponse>(
+      endpoints.storefront.lookbooks,
+    );
+    return data;
+  },
+};
