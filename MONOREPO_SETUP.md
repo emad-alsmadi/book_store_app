@@ -1,299 +1,217 @@
-# Craftify Monorepo Setup Guide
+# TrendVaulta Monorepo Setup Guide
 
-This guide will help you set up and work with the Craftify Templates Marketplace monorepo structure.
+Setup and day-to-day workflow for the TrendVaulta retail e-commerce monorepo (beauty / fashion / lifestyle).
 
-## Architecture Overview
+## Architecture overview
 
 ```
-craftify-templates-marketplace/
+trendvaulta/
 ├── apps/
-│   ├── website/        # Next.js frontend (port 3001)
-│   ├── dashboard/      # React + Vite admin dashboard (port 3002)
-│   └── backend/        # Express.js backend API (port 3000)
+│   ├── website/        # Next.js storefront (port 3001)
+│   ├── dashboard/      # Vite + React admin (port 3002)
+│   └── api/            # Express.js API (port 3000)
 ├── packages/
-│   ├── ui/             # Shared UI components
-│   ├── types/          # Shared TypeScript types
-│   └── api-client/     # Shared API client
-├── package.json        # Root package.json with workspace configuration
-└── pnpm-workspace.yaml # PNPM workspace configuration
+│   ├── ui/             # Shared UI (@trendvaulta/ui)
+│   ├── types/          # Shared TypeScript types (@trendvaulta/types)
+│   └── api-client/     # Shared API client (@trendvaulta/api-client)
+├── package.json        # npm workspaces + root scripts
+└── pnpm-workspace.yaml # Optional leftover; prefer npm workspaces from root package.json
 ```
+
+Catalog domain: **products and brands** (not digital templates).
 
 ## Prerequisites
 
 - Node.js 18 or higher
-- pnpm (recommended) or npm
-- MongoDB database (local or MongoDB Atlas)
+- npm 9+ (primary package manager for this repo)
+- MongoDB (local or Atlas)
+- Stripe keys if you exercise checkout
 
 ## Installation
 
-### 1. Install Package Manager (if using pnpm)
+### 1. Install dependencies
+
+From the repository root:
 
 ```bash
-npm install -g pnpm
-```
-
-### 2. Install Dependencies
-
-From the root directory:
-
-```bash
-# Using pnpm (recommended)
-pnpm install
-
-# Or using npm
 npm install
 ```
 
-This will install dependencies for all packages and applications in the monorepo.
+This installs dependencies for all workspace apps and packages.
 
-### 3. Environment Setup
+### 2. Environment setup
 
-Create a `.env` file in the root directory:
+Create `apps/api/.env` (API loads dotenv from its own process):
 
 ```env
-# Database
-MONGO_URL=mongodb://localhost:27017/craftify_templates
-DB_NAME=craftify_templates
+NODE_ENV=development
+PORT=3000
+MONGO_URL=mongodb://localhost:27017/trendvaulta
+DB_NAME=trendvaulta
 
-# JWT Configuration
-JWT_SECRET_KEY=your-super-secret-jwt-key-here
+JWT_SECRET_KEY=replace-me
 JWT_EXPIRE=30d
 
-# Email Configuration
+FRONTEND_URL=http://localhost:3001
+DASHBOARD_URL=http://localhost:3002
+ALLOWED_ORIGINS=
+
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
-FROM_EMAIL=noreply@craftify.com
-FROM_NAME=Craftify Templates
+FROM_EMAIL=noreply@trendvaulta.com
+FROM_NAME=TrendVaulta
 
-# Frontend URLs
-FRONTEND_URL=http://localhost:3001
-DASHBOARD_URL=http://localhost:3002
-
-# API URL
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
+
+Optional storefront env (`apps/website/.env.local`):
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
+
+Website rewrites `/api/*` to `NEXT_PUBLIC_API_URL` (default `http://localhost:3000`).  
+Dashboard Vite proxies `/api` → `http://localhost:3000` (see `apps/dashboard/vite.config.ts`).
 
 ## Development
 
-### Start All Services
+### Start all services
 
 ```bash
-# Start all applications (website, dashboard, backend)
-pnpm dev
-
-# Or using npm
 npm run dev
 ```
 
-This will start:
-- Backend API on http://localhost:3000
-- Next.js Website on http://localhost:3001
-- React Dashboard on http://localhost:3002
+Starts:
 
-### Start Individual Services
+- API — http://localhost:3000
+- Website — http://localhost:3001
+- Dashboard — http://localhost:3002
+
+### Start individual services
 
 ```bash
-# Start backend only
-pnpm dev:backend
-
-# Start website only
-pnpm dev:website
-
-# Start dashboard only
-pnpm dev:dashboard
+npm run dev:api
+npm run dev:website
+npm run dev:dashboard
 ```
 
-### Start Backend Only
+Or from an app folder:
 
 ```bash
-cd apps/backend
-pnpm dev
+cd apps/api && npm run dev
 ```
 
 ## Building
 
-### Build All Applications
-
 ```bash
-pnpm build
+npm run build
 ```
 
-### Build Individual Applications
+Individual:
 
 ```bash
-# Build website
-pnpm build:website
-
-# Build dashboard
-pnpm build:dashboard
+npm run build:website
+npm run build:dashboard
 ```
 
-## Shared Packages
+API has no compile step (`npm start` / `npm run dev` run Node directly).
 
-### @craftify/types
+## Shared packages
 
-Shared TypeScript types and interfaces used across all applications.
+### `@trendvaulta/types`
 
 **Location:** `packages/types/`
 
-**Usage:**
 ```typescript
-import { User, Template, Order } from '@craftify/types'
+import type { /* shared types */ } from '@trendvaulta/types';
 ```
 
-### @craftify/ui
-
-Shared UI components built with Radix UI primitives and TailwindCSS.
+### `@trendvaulta/ui`
 
 **Location:** `packages/ui/`
 
-**Usage:**
-```typescript
-import { Button, Card, Dialog } from '@craftify/ui'
-```
+Used mainly by the dashboard (Vite aliases). Prefer existing components before adding new shared UI.
 
-### @craftify/api-client
-
-Shared API client with Axios interceptors for authentication and error handling.
+### `@trendvaulta/api-client`
 
 **Location:** `packages/api-client/`
 
-**Usage:**
-```typescript
-import { authApi, templateApi, orderApi } from '@craftify/api-client'
-```
+Dashboard may use this package. The storefront primarily uses `apps/website/src/lib/api.ts`. Always verify paths against `apps/api/routes/` — do not assume package endpoints are complete.
 
-## Dashboard Features
+## App roles
 
-The admin dashboard includes:
+### Dashboard (`apps/dashboard`)
 
-- **Dashboard Overview**: Statistics and analytics
-- **User Management**: View and manage users
-- **Template Management**: Manage templates and creators
-- **Order Management**: View and process orders
-- **Settings**: Configure dashboard settings
+- Overview / stats
+- Users, products, brands, orders
+- Coupons, offers, reviews, settings
+- Stack: React 19, Vite, React Router, TanStack Query, Tailwind, Recharts
 
-### Dashboard Tech Stack
+### Website (`apps/website`)
 
-- React 19 with TypeScript
-- Vite for fast development
-- React Router for navigation
-- TanStack Query for data fetching
-- Framer Motion for animations
-- TailwindCSS for styling
-- Lucide React for icons
-- Recharts for data visualization
+- Product browsing, brands, cart, checkout (Stripe)
+- Auth, wishlist, reviews, order history
+- Homepage storefront rails (offers, recommendations, lookbooks, etc.)
+- Stack: Next.js 16 App Router, React 19, TanStack Query, Zustand, Tailwind
 
-## Website Features
+### API (`apps/api`)
 
-The main website includes:
+- REST under `/api/`
+- JWT auth (`verfiyToken`), Joi validation, Mongoose
+- Stripe Checkout + webhook
+- Nodemailer (password reset; order confirmation when wired)
+- Default port `3000` (`PORT` env override)
 
-- Template browsing and filtering
-- Creator profiles
-- Shopping cart and checkout
-- User authentication
-- Order management
+## Useful scripts (root)
 
-### Website Tech Stack
+| Script | Purpose |
+|---|---|
+| `npm run dev` | All three apps |
+| `npm run test:api` | API tests |
+| `npm run typecheck:website` | Website typecheck |
+| `npm run lint` | Lint workspaces |
 
-- Next.js 16 with App Router
-- React 19 with TypeScript
-- TanStack Query for data fetching
-- Zustand for state management
-- Framer Motion for animations
-- TailwindCSS for styling
-- Radix UI components
+## Deployment notes
 
-## Backend Features
+- **API**: Node host (e.g. Render). See `apps/api/render.yaml`. Use MongoDB Atlas in production. Point Stripe webhooks to `POST /api/webhooks/stripe`.
+- **Website**: Vercel (or similar) with `NEXT_PUBLIC_API_URL` pointing at the deployed API.
+- **Dashboard**: Build with `npm run build:dashboard` and host `apps/dashboard/dist`; configure API base URL / proxy as needed.
+- Set production `FRONTEND_URL`, `DASHBOARD_URL`, and CORS allowlists.
 
-The backend API includes:
-
-- RESTful API endpoints
-- JWT authentication
-- MongoDB integration with Mongoose
-- Email services with Nodemailer
-- Role-based access control
-
-### Backend Tech Stack
-
-- Node.js 18+
-- Express.js 5.x
-- MongoDB with Mongoose
-- JWT authentication
-- Joi validation
-
-## Deployment
-
-### Backend Deployment (Railway/Heroku)
-
-1. Connect your repository to Railway/Heroku
-2. Configure environment variables
-3. Set MongoDB connection string
-4. Deploy
-
-### Website Deployment (Vercel)
-
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables
-3. Deploy automatically on push to main branch
-
-### Dashboard Deployment (Vercel/Netlify)
-
-1. Build the dashboard: `pnpm build:dashboard`
-2. Deploy the `apps/dashboard/dist` folder to your hosting provider
-3. Configure environment variables
+Liveness check currently available on the API: `GET /api/trendvaulta`.  
+Readiness (`GET /api/ready`) is defined in `apps/api/routes/health.js` — ensure that router is mounted in `app.js` before relying on it in production.
 
 ## Troubleshooting
 
-### Dependencies Not Found
-
-If you see errors about missing dependencies:
+### Dependencies not found
 
 ```bash
-# Clear node_modules and reinstall
-rm -rf node_modules apps/*/node_modules packages/*/node_modules
-pnpm install
+# PowerShell
+Remove-Item -Recurse -Force node_modules, apps\*\node_modules, packages\*\node_modules -ErrorAction SilentlyContinue
+npm install
 ```
 
-### TypeScript Errors
+### Port already in use
 
-If you see TypeScript errors about workspace references:
+- API: `PORT` in `apps/api/.env`
+- Website: `-p` in `apps/website/package.json` `dev` script
+- Dashboard: `server.port` in `apps/dashboard/vite.config.ts`
 
-```bash
-# Build types package first
-cd packages/types
-pnpm build
+### CORS blocked
 
-# Or use tsc to check types
-pnpm type-check
-```
+Ensure `FRONTEND_URL` / `DASHBOARD_URL` / `ALLOWED_ORIGINS` match the browser origin. Local defaults include `http://localhost:3001` outside production.
 
-### Port Already in Use
+## Best practices
 
-If a port is already in use, you can change the port in the respective application's configuration:
-
-- Backend: `apps/backend/app.js`
-- Website: `apps/website/package.json` (dev script)
-- Dashboard: `apps/dashboard/vite.config.ts`
-
-## Best Practices
-
-1. **Shared Code**: Always use shared packages for code that needs to be shared between applications
-2. **Types**: Define types in `@craftify/types` and import them in other packages
-3. **UI Components**: Extract reusable UI components to `@craftify/ui`
-4. **API Calls**: Use the shared `@craftify/api-client` for all API calls
-5. **Consistent Styling**: Use TailwindCSS and follow the existing design system
-6. **Code Quality**: Run linting before committing: `pnpm lint`
-
-## Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request
+1. Prefer small, app-local changes; share via `@trendvaulta/*` only when reuse is real.
+2. Look up API contracts in `apps/api/routes/` + controllers — never guess.
+3. Match the existing design system of the app you edit.
+4. Suggest conventional commits; do not commit unless asked.
+5. See `AGENTS.md` and `.cursor/rules/` for agent workflow constraints.
 
 ## Support
 
-For issues or questions, please create an issue in the repository.
+Open an issue in the repository with reproduction steps and which app (api / website / dashboard) is affected.

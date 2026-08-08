@@ -1,27 +1,31 @@
 services:
-  # Backend API Service
+  # TrendVaulta Backend API
   - type: web
-    name: craftify-backend
+    name: trendvaulta-api
     env: node
     plan: free
     region: oregon
     runtime: node
+    # If this Blueprint is applied from the monorepo root, uncomment:
+    # rootDir: apps/api
     buildCommand: npm install
     startCommand: npm start
     autoDeploy: true
-    
-    # Environment Variables (Configure in Render Dashboard)
+    # Liveness (no DB) — also defined inline in app.js
+    healthCheckPath: /api/trendvaulta
+
+    # Environment Variables (set secrets in Render Dashboard)
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: MONGO_URL
-        sync: false  # Set this in Render dashboard
+        sync: false
       - key: DB_NAME
-        value: craftify_templates
+        value: trendvaulta
       - key: JWT_SECRET_KEY
-        sync: false  # Set this in Render dashboard
+        sync: false
       - key: JWT_EXPIRE
         value: 30d
       - key: EMAIL_HOST
@@ -29,17 +33,24 @@ services:
       - key: EMAIL_PORT
         value: 587
       - key: EMAIL_USER
-        sync: false  # Set this in Render dashboard
+        sync: false
       - key: EMAIL_PASS
-        sync: false  # Set this in Render dashboard
+        sync: false
       - key: FROM_EMAIL
-        value: noreply@craftify.com
+        value: noreply@trendvaulta.com
       - key: FROM_NAME
-        value: Craftify Templates
+        value: TrendVaulta
       - key: FRONTEND_URL
-        sync: false  # Set this in Render dashboard
+        sync: false
+      - key: DASHBOARD_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
 
-# Health check: GET /api/health (liveness), GET /api/ready (DB)
-databases:
-  # MongoDB Atlas (External) - No need to create database on Render
-  # We'll use MongoDB Atlas connection string
+# TrendVaulta  notes:
+# - Liveness: GET /api/trendvaulta
+# Database: MongoDB Atlas (external) — set MONGO_URL in the Render dashboard
