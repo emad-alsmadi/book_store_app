@@ -913,3 +913,31 @@ export const lookbooksApi = {
     return data;
   },
 };
+
+export type StorefrontCategoryItem = {
+  id: string;
+  label: string;
+  href: string;
+  imageUrl?: string;
+};
+
+export type StorefrontCategoriesResponse = {
+  message: string;
+  results: StorefrontCategoryItem[];
+};
+
+/**
+ * Categories API — homepage popular category shortcuts
+ */
+export const categoriesApi = {
+  /**
+   * GET /api/storefront/categories
+   * @returns Envelope with category shortcut results
+   */
+  getCategories: async (): Promise<StorefrontCategoriesResponse> => {
+    const { data } = await api.get<StorefrontCategoriesResponse>(
+      endpoints.storefront.categories,
+    );
+    return data;
+  },
+};

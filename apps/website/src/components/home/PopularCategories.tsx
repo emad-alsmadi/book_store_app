@@ -13,6 +13,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { DEMO_CATEGORY_SHORTCUTS } from '@/data/demoStorefront';
+import { useStorefrontCategories } from '@/hooks/storefront/categoriesQuery';
 
 const ICONS = {
   sparkles: Sparkles,
@@ -25,8 +26,15 @@ const ICONS = {
   bag: ShoppingBag,
 } as const;
 
-/** Category shortcuts — DEMO labels; hrefs point at live catalog filters */
+/** Category shortcuts — GET /api/storefront/categories with DEMO fallback */
 export function PopularCategories() {
+  const { data, isLoading, isError } = useStorefrontCategories();
+
+  const liveCategories = data && data.length > 0 ? data : null;
+  const categories =
+    liveCategories ?? (!isLoading ? DEMO_CATEGORY_SHORTCUTS : null);
+  const usingFallback = !liveCategories && !isLoading;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -45,40 +53,48 @@ export function PopularCategories() {
             Shop by category
           </h2>
           <p className='text-gray-600'>
-            Beauty, fashion, and lifestyle edits — browse the TrendVaulta catalog
+            {usingFallback || isError
+              ? 'Beauty, fashion, and lifestyle edits — demo categories while the catalog refreshes'
+              : 'Beauty, fashion, and lifestyle edits — browse the TrendVaulta catalog'}
           </p>
         </div>
 
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          {DEMO_CATEGORY_SHORTCUTS.map((category, index) => {
-            const Icon = ICONS[category.icon];
-            return (
-              <motion.div
-                key={category.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <Link
-                  href={category.href}
-                  className='group block'
+        {isLoading && !categories ? (
+          <p className='text-sm text-gray-500' role='status'>
+            Loading categories…
+          </p>
+        ) : categories ? (
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            {categories.map((category, index) => {
+              const Icon = ICONS[category.icon];
+              return (
+                <motion.div
+                  key={category.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div
-                    className={`bg-gradient-to-br ${category.accent} rounded-xl p-6 text-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
+                  <Link
+                    href={category.href}
+                    className='group block'
                   >
-                    <Icon
-                      className='h-8 w-8 mb-3 opacity-90'
-                      aria-hidden
-                    />
-                    <h3 className='font-bold text-lg mb-1'>{category.name}</h3>
-                    <p className='text-sm opacity-90'>{category.countLabel}</p>
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+                    <div
+                      className={`bg-gradient-to-br ${category.accent} rounded-xl p-6 text-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
+                    >
+                      <Icon
+                        className='h-8 w-8 mb-3 opacity-90'
+                        aria-hidden
+                      />
+                      <h3 className='font-bold text-lg mb-1'>{category.name}</h3>
+                      <p className='text-sm opacity-90'>{category.countLabel}</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </motion.section>
   );

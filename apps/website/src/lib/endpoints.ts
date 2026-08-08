@@ -82,5 +82,6 @@ export const endpoints = {
     trust: '/storefront/trust',
     giftFinder: '/storefront/gift-finder',
     lookbooks: '/storefront/lookbooks',
+    categories: '/storefront/categories',
   },
 } as const;
